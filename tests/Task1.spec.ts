@@ -9,6 +9,7 @@ import {gasCompare} from '../util/gas-usage';
 describe('Task1', () => {
     let code: Cell;
     let owner: SandboxContract<TreasuryContract>;
+    let public_key: bigint = 124n;
 
     beforeAll(async () => {
         code = await compile('Task1');
@@ -20,11 +21,15 @@ describe('Task1', () => {
     beforeEach(async () => {
         blockchain = await Blockchain.create();
 
-        task1 = blockchain.openContract(Task1.createFromConfig({}, code));
-
         owner = await blockchain.treasury('deployer');
 
-        const deployResult = await task1.sendDeploy(owner.getSender(), toNano('0.05'));
+        task1 = blockchain.openContract(Task1.createFromConfig({
+            public_key,
+            receiver: owner.address,
+            execution_time: 1000,
+        }, code));
+
+        const deployResult = await task1.sendDeploy(owner.getSender(), toNano('1'));
 
         expect(deployResult.transactions).toHaveTransaction({
             from: owner.address,
@@ -40,14 +45,25 @@ describe('Task1', () => {
     });
 
     it('should throw error correctly', async () => {
+        const seqno1 = await task1.getSeqno();
+        expect(seqno1).toEqual(0);
+
+        const op = 0x9df10277;
+
         const cell = beginCell()
-          .storeUint(0x9df10277, 32)
+          .storeUint(op, 32)
           .storeUint(62, 64)
           .storeUint(62, 512)
-          .storeRef(beginCell().storeUint(0, 31).storeUint(0, 32).endCell())
+          .storeRef(beginCell().storeUint(0, 32).storeUint(1, 32).endCell())
           .endCell();
-        const r1 = await task1.send(owner.getSender(), toNano('0.05'), cell);
+        const r1 = await task1.send(owner.getSender(), toNano('0.5'), cell);
 
-        gasCompare(r1, 19779651n, 7n);
+        // console.log(r1.transactions);
+        const receiver = await task1.getReceiver();
+        const seqno2 = await task1.getSeqno();
+        expect(receiver).toEqualAddress(owner.address);
+
+        expect(seqno2).toEqual(1);
+        gasCompare(r1, 7677990n);
     });
 });

@@ -10,10 +10,21 @@ import {
     TupleItemCell, TupleItemSlice
 } from 'ton-core';
 
-export type Task1Config = {};
+// storage$_ public_key:uint256 execution_time:uint32 receiver:MsgAddressInt seqno:uint32 = Storage;
+export type Task1Config = {
+    public_key: bigint,
+    execution_time: number,
+    receiver: Address,
+    seqno?: number,
+};
 
 export function task1ConfigToCell(config: Task1Config): Cell {
-    return beginCell().endCell();
+    return beginCell()
+      .storeUint(config.public_key, 256)
+      .storeUint(config.execution_time, 32)
+      .storeAddress(config.receiver)
+      .storeUint(config.seqno ?? 0, 32)
+      .endCell();
 }
 
 export class Task1 implements Contract {
@@ -47,6 +58,16 @@ export class Task1 implements Contract {
     async getNum(provider: ContractProvider, cell: Cell): Promise<number> {
         const options: [TupleItemSlice] = [{type: 'slice', cell}];
         const result = await provider.get('get_num', options);
+        return result.stack.readNumber();
+    }
+
+    async getReceiver(provider: ContractProvider): Promise<Address> {
+        const result = await provider.get('get_receiver', []);
+        return result.stack.readAddress();
+    }
+
+    async getSeqno(provider: ContractProvider): Promise<number> {
+        const result = await provider.get('get_seqno', []);
         return result.stack.readNumber();
     }
 }
