@@ -12,10 +12,10 @@
         accept_message();
 
         cell msg = begin_cell()
-        .store_uint(0x18, 6) ;; or 0x10 for non-bounce
-        .store_slice(reciever)
-        .store_grams(my_balance)
-        .end_cell();
+            .store_uint(0x18, 6) ;; or 0x10 for non-bounce
+            .store_slice(reciever)
+            .store_grams(my_balance)
+            .end_cell();
         send_raw_message(msg, 128);
     }
 }
