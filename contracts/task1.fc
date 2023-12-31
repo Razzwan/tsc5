@@ -1,9 +1,19 @@
 #include "imports/stdlib.fc";
 
-(int) handler(cell in_msg, slice in_msg_body) impure inline_ref {
+;;(int) parse_msg(slice in_msg_body) method_id {
+;;    var (query_id, signature, ref_cell) = (
+;;        in_msg_body~load_uint(64),
+;;        in_msg_body~load_bits(512),
+;;        in_msg_body~load_ref()
+;;    );
+;;    var r = ref_cell.begin_parse();
+;;    var (locked_for, new_seqno) = (r~load_uint(32), r~load_uint(32));
+;;}
+
+(int) handler(slice in_msg_body) impure inline_ref {
     int op = 0;
-    if (slice_bits(in_msg) >= 32) {
-        op = in_msg.preload_uint(32);
+    if (slice_bits(in_msg_body) >= 32) {
+        op = in_msg_body~load_uint(32);
     }
 
     {- storage$_ public_key:uint256 execution_time:uint32 receiver:MsgAddressInt seqno:uint32 = Storage; -}
@@ -24,9 +34,9 @@
         var (locked_for, new_seqno) = (r~load_uint(32), r~load_uint(32));
 
         {- If new_seqno != seqno + 1, error 119 must be thrown. This is a check for the fact that this is a new transaction (and not an old one that was sent again). -}
-        if (new_seqno != seqno + 1) {
-            return (119);
-        }
+;;        if (new_seqno == (seqno + 1)) {
+;;            return (119);
+;;        }
 
         {- If the signature does not match, you should throw error 120. This is a check on the admin. -}
         return (120);
@@ -40,13 +50,12 @@
     return (0);
 }
 
-() recv_internal(int my_balance, int in_msg_cell, cell in_msg, slice in_msg_body) impure {
-    int handled = handler(in_msg, in_msg_body);
+() recv_internal(slice in_msg) impure {
+    int handled = handler(in_msg);
 
     if (handled) {
-        throw_unless(handled, true);
+        throw(handled);
     }
-
 
 ;;    if(op == 0xbb4be234) {
 ;;        var ds = get_data().begin_parse();

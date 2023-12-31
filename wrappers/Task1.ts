@@ -1,4 +1,14 @@
-import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from 'ton-core';
+import {
+    Address,
+    beginCell,
+    Cell,
+    Contract,
+    contractAddress,
+    ContractProvider,
+    Sender,
+    SendMode,
+    TupleItemCell, TupleItemSlice
+} from 'ton-core';
 
 export type Task1Config = {};
 
@@ -25,5 +35,18 @@ export class Task1 implements Contract {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().endCell(),
         });
+    }
+
+    async send(provider: ContractProvider, via: Sender, value: bigint, body: Cell) {
+        await provider.internal(via, {
+            value,
+            body,
+        });
+    }
+
+    async getNum(provider: ContractProvider, cell: Cell): Promise<number> {
+        const options: [TupleItemSlice] = [{type: 'slice', cell}];
+        const result = await provider.get('get_num', options);
+        return result.stack.readNumber();
     }
 }
