@@ -55,6 +55,10 @@ export class Task1 implements Contract {
         });
     }
 
+    async sendExternal(provider: ContractProvider, msg: Cell) {
+        await provider.external(msg);
+    }
+
     async getNum(provider: ContractProvider, cell: Cell): Promise<number> {
         const options: [TupleItemSlice] = [{type: 'slice', cell}];
         const result = await provider.get('get_num', options);
