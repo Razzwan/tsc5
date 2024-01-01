@@ -36,8 +36,6 @@
     {- storage$_ public_key:uint256 execution_time:uint32 receiver:MsgAddressInt seqno:uint32 = Storage; -}
     var (public_key, execution_time, receiver, seqno) = load_data();
 
-    ;; 2649817719
-
     {- will process -}
     if (op == 0x9df10277) {
         {- msg body -}
@@ -50,6 +48,7 @@
         var r = ref_cell.begin_parse();
         var (locked_for, new_seqno) = (r~load_uint(32), r~load_uint(32));
 
+;;        ~dump(new_seqno);
         {- 1. If new_seqno != seqno + 1, error 119 must be thrown. This is a check for the fact that this is a new transaction (and not an old one that was sent again). -}
         if (new_seqno != (seqno + 1)) {
             return (119);
@@ -59,25 +58,28 @@
 
         save_data(public_key, execution_time, receiver, seqno + 1);
 
-        return (0);
+        return 0;
     }
 
     {- send to recipient -}
     if (op == 0xbb4be234) {
-        return (121);
+        return 121;
     }
 
-    return (0);
+    return 0;
 }
 
-() recv_internal() impure {
+() recv_internal(slice in_msg) {
+
 }
 
-() recv_external(cell in_msg) impure {
-    int handled = handler(in_msg.begin_parse());
+() recv_external(slice in_msg) impure {
+    int handled = handler(in_msg);
 
     if (handled) {
         throw(handled);
+    } else {
+        accept_message();
     }
 
     ;;    if(op == 0xbb4be234) {

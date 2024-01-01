@@ -56,7 +56,7 @@ describe('Task1', () => {
           .storeUint(62, 512)
           .storeRef(beginCell().storeUint(0, 32).storeUint(1, 32).endCell())
           .endCell();
-        const r1 = await task1.send(owner.getSender(), toNano('0.5'), cell);
+        const r1 = await task1.sendExternal(cell);
 
         // console.log(r1.transactions);
         const receiver = await task1.getReceiver();
@@ -64,6 +64,6 @@ describe('Task1', () => {
         expect(receiver).toEqualAddress(owner.address);
 
         expect(seqno2).toEqual(1);
-        gasCompare(r1, 7677990n);
+        gasCompare(r1, 3803000n);
     });
 });
