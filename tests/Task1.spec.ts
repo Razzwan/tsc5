@@ -10,7 +10,6 @@ describe('Task1', () => {
     let code: Cell;
     let owner: SandboxContract<TreasuryContract>;
     let public_key: number = 0x449A4E06B6D9513A0F88F33A91C12B946B63607D5E444A0F55AB438ADC8F33B0;
-    let private_key: number = 0x0BC50414DDD20E6A0165C2EE883C0C92FB41938FB2C6FBB309DCCBFFD5F2B3CD;
 
     beforeAll(async () => {
         code = await compile('Task1');
