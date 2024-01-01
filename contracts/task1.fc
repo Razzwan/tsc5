@@ -30,7 +30,7 @@
     if (op == 0x9df10277) {
         {- msg body -}
         {- update#9df10277 query_id:uint64 signature:bits512 ^[ locked_for:uint32 new_seqno:uint32 ] = ExtInMsgBody -}
-        var (query_id, signature, ref_cell) = (
+        var (_, signature, ref_cell) = (
             in_msg_body~load_uint(64),
             in_msg_body~load_bits(512),
             in_msg_body~load_ref()
@@ -78,8 +78,6 @@
             return 124;
         }
 
-;;        var query_id = in_msg_body~load_uint(64);
-
         accept_message();
 
         var msg = begin_cell()
@@ -87,8 +85,6 @@
         .store_slice(receiver)
         .store_coins(0)
         .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-;;        .store_uint(0, 32)
-;;        .store_uint(query_id, 64)
         .end_cell();
 
         send_raw_message(msg, 128);
@@ -115,19 +111,7 @@
     return execution_time;
 }
 
-(slice) get_receiver() impure method_id {
-    var (_, _, receiver, _) = load_data();
-    return receiver;
-}
-
 (int) get_seqno() impure method_id {
     var (_, _, _, seqno) = load_data();
     return seqno;
-}
-
-(int) get_hash() impure method_id {
-    return begin_cell()
-    .store_uint(60, 32)
-    .store_uint(1, 32)
-    .end_cell().cell_hash();
 }
