@@ -55,9 +55,9 @@
         }
 
         {- 2. If the signature does not match, you should throw error 120. This is a check on the admin. -}
-;;        if (check_signature(ref_cell.cell_hash(), signature, public_key) == 0) {
-;;            return 120;
-;;        }
+        if (check_signature(ref_cell.cell_hash(), signature, public_key) == 0) {
+            return 120;
+        }
 
         {- 3. If locked_for <= 0, then error 121 must be thrown. locked_for must be strictly positive. -}
         if (locked_for <= 0) {
