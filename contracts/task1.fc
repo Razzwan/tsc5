@@ -74,25 +74,24 @@
     {- send to recipient -}
     if (op == 0xbb4be234) {
         {-1. If execution_time has not occurred, error 124 should be thrown. -}
-        if (execution_time < now()) {
+        if (execution_time > now()) {
             return 124;
         }
 
-        accept_message();
-
 ;;        var query_id = in_msg_body~load_uint(64);
 
-        send_raw_message(
-            begin_cell()
-            .store_uint(0x18, 6)
-            .store_slice(receiver)
-            .store_coins(0)
-            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .store_uint(0, 32)
-;;            .store_uint(query_id, 64)
-            .end_cell(),
-            128
-        );
+        accept_message();
+
+        var msg = begin_cell()
+        .store_uint(0x18, 6)
+        .store_slice(receiver)
+        .store_coins(0)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+;;        .store_uint(0, 32)
+;;        .store_uint(query_id, 64)
+        .end_cell();
+
+        send_raw_message(msg, 128);
 
         return 0;
     }
