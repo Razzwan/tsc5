@@ -45,32 +45,72 @@
             in_msg_body~load_bits(512),
             in_msg_body~load_ref()
         );
+
         var r = ref_cell.begin_parse();
         var (locked_for, new_seqno) = (r~load_uint(32), r~load_uint(32));
 
-;;        ~dump(new_seqno);
         {- 1. If new_seqno != seqno + 1, error 119 must be thrown. This is a check for the fact that this is a new transaction (and not an old one that was sent again). -}
         if (new_seqno != (seqno + 1)) {
-            return (119);
+            return 119;
         }
 
-        {- If the signature does not match, you should throw error 120. This is a check on the admin. -}
+        {- 2. If the signature does not match, you should throw error 120. This is a check on the admin. -}
+;;        if (check_signature(ref_cell.cell_hash(), signature, public_key) == 0) {
+;;            return 120;
+;;        }
 
-        save_data(public_key, execution_time, receiver, seqno + 1);
+        {- 3. If locked_for <= 0, then error 121 must be thrown. locked_for must be strictly positive. -}
+        if (locked_for <= 0) {
+            return 121;
+        }
+
+        {- 4. If execution_time < now(), you should throw error 122. Checking that execution_time has not passed yet. -}
+        if (execution_time < now()) {
+            return 122;
+        }
+
+        {- 5. If now + locked_for < execution_time, throw error 123. Checking that the deferral of the will is strictly greater than the value by which it has already been deferred. -}
+        if (now() + locked_for < execution_time) {
+            return 123;
+        }
+
+        accept_message();
+
+        save_data(public_key, now() + locked_for, receiver, seqno + 1);
 
         return 0;
     }
 
     {- send to recipient -}
     if (op == 0xbb4be234) {
-        return 121;
+        {-1. If execution_time has not occurred, error 124 should be thrown. -}
+        if (execution_time < now()) {
+            return 124;
+        }
+
+        accept_message();
+
+        send_raw_message(
+            begin_cell()
+                    .store_uint(1, 2)
+                    .store_slice(receiver)
+                    .store_coins(0)
+                    .end_cell(),
+            128
+        );
+
+        return 0;
     }
 
     return 0;
 }
 
 () recv_internal(slice in_msg) {
+    int handled = handler(in_msg);
 
+    if (handled) {
+        throw(handled);
+    }
 }
 
 () recv_external(slice in_msg) impure {
@@ -78,25 +118,12 @@
 
     if (handled) {
         throw(handled);
-    } else {
-        accept_message();
     }
+}
 
-    ;;    if(op == 0xbb4be234) {
-    ;;        var ds = get_data().begin_parse();
-    ;;        var (_,execution_time,receiver,_) =
-    ;;        (ds~load_uint(256), ds~load_uint(32), ds~load_msg_addr(), ds~load_uint(32));
-    ;;
-    ;;        throw_unless(124, execution_time > now());
-    ;;        accept_message();
-    ;;
-    ;;        cell msg = begin_cell()
-    ;;            .store_uint(0x18, 6) ;; or 0x10 for non-bounce
-    ;;            .store_slice(reciever)
-    ;;            .store_grams(my_balance)
-    ;;            .end_cell();
-    ;;        send_raw_message(msg, 128);
-    ;;    }
+(int) get_execution_time() impure method_id {
+    var (_, execution_time, _, _) = load_data();
+    return execution_time;
 }
 
 (slice) get_receiver() impure method_id {
@@ -107,4 +134,11 @@
 (int) get_seqno() impure method_id {
     var (_, _, _, seqno) = load_data();
     return seqno;
+}
+
+(int) get_hash() impure method_id {
+    return begin_cell()
+    .store_uint(60, 32)
+    .store_uint(1, 32)
+    .end_cell().cell_hash();
 }

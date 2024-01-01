@@ -12,7 +12,7 @@ import {
 
 // storage$_ public_key:uint256 execution_time:uint32 receiver:MsgAddressInt seqno:uint32 = Storage;
 export type Task1Config = {
-    public_key: bigint,
+    public_key: number,
     execution_time: number,
     receiver: Address,
     seqno?: number,
@@ -72,6 +72,16 @@ export class Task1 implements Contract {
 
     async getSeqno(provider: ContractProvider): Promise<number> {
         const result = await provider.get('get_seqno', []);
+        return result.stack.readNumber();
+    }
+
+    async getExecutionTime(provider: ContractProvider): Promise<number> {
+        const result = await provider.get('get_execution_time', []);
+        return result.stack.readNumber();
+    }
+
+    async getHash(provider: ContractProvider): Promise<number> {
+        const result = await provider.get('get_hash', []);
         return result.stack.readNumber();
     }
 }

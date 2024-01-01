@@ -9,7 +9,8 @@ import {gasCompare} from '../util/gas-usage';
 describe('Task1', () => {
     let code: Cell;
     let owner: SandboxContract<TreasuryContract>;
-    let public_key: bigint = 124n;
+    let public_key: number = 0x449A4E06B6D9513A0F88F33A91C12B946B63607D5E444A0F55AB438ADC8F33B0;
+    let private_key: number = 0x0BC50414DDD20E6A0165C2EE883C0C92FB41938FB2C6FBB309DCCBFFD5F2B3CD;
 
     beforeAll(async () => {
         code = await compile('Task1');
@@ -26,7 +27,7 @@ describe('Task1', () => {
         task1 = blockchain.openContract(Task1.createFromConfig({
             public_key,
             receiver: owner.address,
-            execution_time: 1000,
+            execution_time: Math.floor(new Date().getTime()/1000) + 30,
         }, code));
 
         const deployResult = await task1.sendDeploy(owner.getSender(), toNano('1'));
@@ -49,21 +50,31 @@ describe('Task1', () => {
         expect(seqno1).toEqual(0);
 
         const op = 0x9df10277;
+        // в секундах
+        const locked_for = 60;
 
         const cell = beginCell()
           .storeUint(op, 32)
-          .storeUint(62, 64)
-          .storeUint(62, 512)
-          .storeRef(beginCell().storeUint(0, 32).storeUint(1, 32).endCell())
+          // query_id - не используется
+          .storeUint(0, 64)
+          .storeUint(0x924F341FC1161133419086CC032CE8FB7E9DBAB76A8502D546D941C5246762CE097973C83772B30D29D0BCC13E8E87432D5FC4FE7B64C66AFD7755D95897B40C, 512)
+          .storeRef(beginCell().storeUint(locked_for, 32).storeUint(1, 32).endCell())
           .endCell();
         const r1 = await task1.sendExternal(cell);
+        // const r1 = await task1.send(owner.getSender(), toNano('0.05'), cell);
 
         // console.log(r1.transactions);
         const receiver = await task1.getReceiver();
         const seqno2 = await task1.getSeqno();
         expect(receiver).toEqualAddress(owner.address);
 
+        // const hash = await task1.getHash();
+        // expect(hash.toString(16)).toEqual('');
+
         expect(seqno2).toEqual(1);
-        gasCompare(r1, 3803000n);
+        const time = await task1.getExecutionTime();
+        expect(time).toEqual(Math.floor(new Date().getTime()/1000) + locked_for);
+        gasCompare(r1, 4159000n);
+        // gasCompare(r1, 8159990n);
     });
 });
