@@ -9,11 +9,11 @@
 () save_data(int public_key, int execution_time, slice receiver, int seqno) impure inline_ref {
     set_data(
         begin_cell()
-            .store_uint(public_key, 256)
-            .store_uint(execution_time, 32)
-            .store_slice(receiver)
-            .store_uint(seqno, 32)
-            .end_cell()
+        .store_uint(public_key, 256)
+        .store_uint(execution_time, 32)
+        .store_slice(receiver)
+        .store_uint(seqno, 32)
+        .end_cell()
     );
 }
 
@@ -80,14 +80,17 @@
 
         accept_message();
 
+        var query_id = in_msg_body~load_uint(64);
+
         send_raw_message(
             begin_cell()
-                    .store_uint(0x18, 6)
-                    .store_slice(receiver)
-                    .store_coins(0)
-                    .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-                    .store_uint(0, 1)
-                    .end_cell(),
+            .store_uint(0x18, 6)
+            .store_slice(receiver)
+            .store_coins(0)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1)
+            .store_uint(1, 1)
+            .store_uint(query_id, 64)
+            .end_cell(),
             128
         );
 
