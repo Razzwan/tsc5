@@ -1,5 +1,168 @@
 #include "imports/stdlib.fc";
 
-() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+(slice, int) dict_get?(cell dict, int key_len, slice index) asm(index dict key_len) "DICTGET" "NULLSWAPIFNOT";
+(cell, int) dict_add_builder?(cell dict, int key_len, slice index, builder value) asm(value index dict key_len) "DICTADDB";
+(cell, int) dict_delete?(cell dict, int key_len, slice index) asm(index dict key_len) "DICTDEL";
 
+;; value_min, index_min
+(slice, slice, int) dict_get_min?(cell dict, int key_len) asm "DICTMIN";
+;; value_next, index_next
+(slice, slice, int) dict_get_next?(cell dict, int key_len, slice index) asm(index dict key_len) "DICTGETNEXT";
+
+{-
+    admin_address: MsgAddressInt
+    users: (HashmapE 256 uint32)
+    total: uint32
+-}
+(slice, cell, int) load_data() impure inline_ref {
+    var ds = get_data().begin_parse();
+    return (ds~load_msg_addr(), ds~load_dict(), ds~load_uint(32));
+}
+
+() save_data(slice admin_address, cell user_shares, int total) impure inline_ref {
+    set_data(
+        begin_cell()
+        .store_slice(admin_address)
+        .store_dict(user_shares)
+        .store_uint(total, 32)
+        .end_cell()
+    );
+}
+
+;; shares success?
+(int, int) _get_shares_by_address(slice address) impure inline_ref {
+    var (_, user_shares, _) = load_data();
+    var (d, success?) = user_shares.dict_get?(256, address.slice_last(256));
+    if (success?) {
+        return (d~load_uint(32), -1);
+    }
+
+    return (0, 0);
+}
+
+(int) handler(cell in_msg_cell, slice in_msg_body) impure inline_ref {
+    int op = 0;
+    if (slice_bits(in_msg_body) >= 32) {
+        op = in_msg_body~load_uint(32);
+    }
+
+    var sc = in_msg_cell.begin_parse();
+    ;; remove flags ???
+    sc~load_uint(4);
+
+    ;; load sender
+    var sender = sc~load_msg_addr();
+
+    {- storage$_ public_key:uint256 execution_time:uint32 receiver:MsgAddressInt seqno:uint32 = Storage; -}
+    var (admin_address, user_shares, total_shares) = load_data();
+
+    ;; Только администратор имеет право вносить изменения
+    if (~ equal_slices(admin_address, sender)) {
+        return 120;
+    }
+
+    {- Add user -}
+    if (op == 0x368ddef3) {
+        {- msg body -}
+        {- add_user#368ddef3 query_id:uint64 address:MsgAddressInt share:uint32 = InternalMsgBody; -}
+        var (_, address, new_shares) = (
+            in_msg_body~load_uint(64),
+            in_msg_body~load_msg_addr(),
+            in_msg_body~load_uint(32)
+        );
+
+        var (existing_shares, success?) = _get_shares_by_address(address);
+
+        slice address_hash = address.slice_last(256);
+
+        if (success?) {
+            user_shares~dict_delete?(256, address_hash);
+        }
+        user_shares~dict_add_builder?(256, address_hash, begin_cell().store_uint(new_shares + existing_shares, 32));
+        save_data(admin_address, user_shares, total_shares + new_shares);
+
+        return 0;
+    }
+
+    {- Remove user -}
+    if (op == 0x278205c8) {
+        {- remove_user#278205c8 query_id:uint64 address:MsgAddressInt = InternalMsgBody; -}
+        var (_, address) = (
+            in_msg_body~load_uint(64),
+            in_msg_body~load_msg_addr()
+        );
+
+        var (existing_shares, success?) = _get_shares_by_address(address);
+
+        slice address_hash = address.slice_last(256);
+
+        if (success?) {
+            user_shares~dict_delete?(256, address_hash);
+            save_data(admin_address, user_shares, total_shares - existing_shares);
+            return 0;
+        }
+
+        return 121;
+    }
+
+    {- Split TON -}
+    if (op == 0x068530b3) {
+        {- split_ton#068530b3 query_id:uint64 = InternalMsgBody; -}
+        var (_) = (in_msg_body~load_uint(64));
+
+        var (dict_val, dict_key, success?) = dict_get_min?(user_shares, 256);
+        if (~ success?) {
+            return 122;
+        }
+
+        var [total_balance, _] = get_balance();
+
+        while (success?) {
+            var msg = begin_cell()
+            .store_uint(0x18, 6)
+            .store_uint(0, 8)
+            .store_slice(dict_key)
+            .store_coins(dict_val.preload_uint(32) * 1000000000 / total_shares * total_balance / 1000000000)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .end_cell();
+
+            send_raw_message(msg, 1);
+
+            (dict_val, dict_key, success?) = dict_get_next?(user_shares, 256, dict_key);
+        }
+    }
+
+    {- Transfer Notification (Jetton). -}
+    if (op == 0x7362d09c) {
+        {- transfer_notification#7362d09c query_id:uint64 amount:Coins = InternalMsgBody; -}
+    }
+
+    return 0;
+}
+
+() recv_internal(cell in_msg_cell, slice in_msg_body) impure {
+    int handled = handler(in_msg_cell, in_msg_body);
+
+    if (handled) {
+        throw(handled);
+    }
+}
+
+(slice) get_admin_address() impure method_id {
+    var (admin_address, _, _) = load_data();
+    ;;    var (wc, address256) = parse_std_addr(address);
+    ;;    var (d, success?) = user_shares.dict_get?(256, begin_cell().store_uint(address256, 256).end_cell().begin_parse());
+    return admin_address;
+}
+
+(cell) get_address_shares() impure method_id {
+    var (_, user_shares, _) = load_data();
+    ;;    var (wc, address256) = parse_std_addr(address);
+    ;;    var (d, success?) = user_shares.dict_get?(256, begin_cell().store_uint(address256, 256).end_cell().begin_parse());
+    return user_shares;
+}
+
+(int) get_shares_by_address(slice address) impure method_id {
+    var (int shares, _) = _get_shares_by_address(address);
+    return shares;
 }
