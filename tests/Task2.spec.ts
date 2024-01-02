@@ -151,4 +151,44 @@ describe('Task2', () => {
         const updated_user_shares = await task2.getSharesByAddress(user.address);
         expect(updated_user_shares).toEqual(0);
     });
+
+    it('prefix', async () => {
+        const prefix = await task2.getPrefix();
+        expect(prefix).toEqual(267);
+        // // 8002FB6A070F918770AFAC73231DE4A7A06BF63FE2A845B1ECEDC102B5A570D6425_
+        // // 8002FB6A070F918770AFAC73231DE4A7A06BF63FE2A845B1ECEDC102B5A570D6425_
+
+    });
+
+    fit('distribute tons to all users', async () => {
+        const split_tons = 0x068530b3;
+
+        const msg = beginCell()
+          .storeUint(split_tons, 32)
+          // query_id - не используется
+          .storeUint(0, 64)
+          .endCell();
+        const res = await task2.send(admin.getSender(), toNano('0.05'), msg);
+        console.log(res);
+        expect(res.transactions).toHaveTransaction({
+            from: admin.address,
+            to: task2.address,
+            op: split_tons,
+            success: true,
+        });
+        // expect(res.transactions).toHaveTransaction({
+        //     from: task2.address,
+        //     to: admin.address,
+        //     success: true,
+        // });
+
+        // const user_length = users.length;
+        // for (let i = 0; i < user_length; i++) {
+        //     expect(res.transactions).toHaveTransaction({
+        //         from: task2.address,
+        //         to: users[i].address,
+        //         success: true,
+        //     });
+        // }
+    });
 });

@@ -75,4 +75,9 @@ export class Task2 implements Contract {
         const result = await provider.get('get_admin_address', []);
         return result.stack.readAddress();
     }
+
+    async getPrefix(provider: ContractProvider): Promise<number> {
+        const result = await provider.get('get_prefix', []);
+        return result.stack.readNumber();
+    }
 }

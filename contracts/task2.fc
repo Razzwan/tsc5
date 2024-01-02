@@ -118,18 +118,23 @@
         var [total_balance, _] = get_balance();
 
         while (success?) {
-            var msg = begin_cell()
-            .store_uint(0x18, 6)
-            .store_uint(0, 8)
-            .store_slice(dict_key)
-            .store_coins(dict_val.preload_uint(32) * 1000000000 / total_shares * total_balance / 1000000000)
-            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .end_cell();
+            int ton_amount = dict_val.preload_uint(32) * total_balance / total_shares;
+            if (ton_amount) {
+                var msg = begin_cell()
+                .store_uint(0x18, 6)
+                .store_uint(1024, 11)
+                .store_slice(dict_key)
+                .store_coins(ton_amount)
+                .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+                .end_cell();
 
-            send_raw_message(msg, 1);
+                send_raw_message(msg, 1);
+            }
 
             (dict_val, dict_key, success?) = dict_get_next?(user_shares, 256, dict_key);
         }
+
+        return 0;
     }
 
     {- Transfer Notification (Jetton). -}
@@ -148,17 +153,20 @@
     }
 }
 
+(int) get_prefix() impure method_id {
+    var (admin_address, _, _) = load_data();
+
+;;    var prefix = admin_address~load_msg_addr();
+    return admin_address~load_uint(11);
+}
+
 (slice) get_admin_address() impure method_id {
     var (admin_address, _, _) = load_data();
-    ;;    var (wc, address256) = parse_std_addr(address);
-    ;;    var (d, success?) = user_shares.dict_get?(256, begin_cell().store_uint(address256, 256).end_cell().begin_parse());
     return admin_address;
 }
 
 (cell) get_users() impure method_id {
     var (_, user_shares, _) = load_data();
-    ;;    var (wc, address256) = parse_std_addr(address);
-    ;;    var (d, success?) = user_shares.dict_get?(256, begin_cell().store_uint(address256, 256).end_cell().begin_parse());
     return user_shares;
 }
 
