@@ -57,7 +57,7 @@ export class Task2 implements Contract {
     }
 
     async getAddressShares(provider: ContractProvider): Promise<Dictionary<Buffer, number>> {
-        const result = await provider.get('get_address_shares', []);
+        const result = await provider.get('get_users', []);
         return Dictionary.loadDirect(
           Dictionary.Keys.Buffer(32),
           Dictionary.Values.Uint(32),
@@ -67,7 +67,7 @@ export class Task2 implements Contract {
 
     async getSharesByAddress(provider: ContractProvider, address: Address): Promise<number> {
         const options: [TupleItemSlice] = [{type: 'slice', cell: beginCell().storeAddress(address).endCell()}];
-        const result = await provider.get('get_shares_by_address', options);
+        const result = await provider.get('get_user_share', options);
         return result.stack.readNumber();
     }
 

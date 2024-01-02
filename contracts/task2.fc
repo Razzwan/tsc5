@@ -155,14 +155,14 @@
     return admin_address;
 }
 
-(cell) get_address_shares() impure method_id {
+(cell) get_users() impure method_id {
     var (_, user_shares, _) = load_data();
     ;;    var (wc, address256) = parse_std_addr(address);
     ;;    var (d, success?) = user_shares.dict_get?(256, begin_cell().store_uint(address256, 256).end_cell().begin_parse());
     return user_shares;
 }
 
-(int) get_shares_by_address(slice address) impure method_id {
+(int) get_user_share(slice address) impure method_id {
     var (int shares, _) = _get_shares_by_address(address);
     return shares;
 }
