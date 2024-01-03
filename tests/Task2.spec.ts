@@ -42,8 +42,8 @@ describe('Task2', () => {
         task2 = blockchain.openContract(Task2.createFromConfig({
             admin_address: admin.address,
             users: new Map([
-              [admin.address, 100],
-              ...map_entries
+              // [admin.address, 100],
+              // ...map_entries
             ]),
             total: total_shares,
         }, code));
