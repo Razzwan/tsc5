@@ -108,7 +108,7 @@
     {- Split TON -}
     if (op == 0x068530b3) {
         {- split_ton#068530b3 query_id:uint64 = InternalMsgBody; -}
-        var (_) = (in_msg_body~load_uint(64));
+        var (query_id) = (in_msg_body~load_uint(64));
 
         var (dict_val, dict_key, success?) = dict_get_min?(user_shares, 256);
         if (~ success?) {
@@ -118,14 +118,17 @@
         var [total_balance, _] = get_balance();
 
         while (success?) {
-            int ton_amount = dict_val.preload_uint(32) * total_balance / total_shares;
+            int ton_amount = dict_val.preload_uint(32) * (total_balance - 50000000) / total_shares;
             if (ton_amount) {
                 var msg = begin_cell()
                 .store_uint(0x18, 6)
-                .store_uint(1024, 11)
+                .store_uint(4, 3)
+                .store_uint(0, 8)
                 .store_slice(dict_key)
                 .store_coins(ton_amount)
-                .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+                .store_uint(0, 1 + 4 + 4)
+                .store_uint(query_id, 64)
+                .store_uint(0, 32 + 1 + 1)
                 .end_cell();
 
                 send_raw_message(msg, 1);
