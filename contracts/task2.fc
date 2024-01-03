@@ -57,9 +57,9 @@
     var (admin_address, user_shares, total_shares) = load_data();
 
     ;; Только администратор имеет право вносить изменения
-    if (~ equal_slices(admin_address, sender)) {
-        return 120;
-    }
+;;    if (~ equal_slices(admin_address, sender)) {
+;;        return 120;
+;;    }
 
     {- Add user -}
     if (op == 0x368ddef3) {
