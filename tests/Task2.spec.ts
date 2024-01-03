@@ -160,7 +160,7 @@ describe('Task2', () => {
 
     });
 
-    fit('distribute tons to all users', async () => {
+    it('distribute tons to all users', async () => {
         const split_tons = 0x068530b3;
 
         const msg = beginCell()

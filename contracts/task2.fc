@@ -30,7 +30,7 @@
 
 ;; shares success?
 (int, int) _get_shares_by_address(slice address) impure inline_ref {
-    var (_, user_shares, _) = load_data();
+    var (_, user_shares) = load_data();
     var (d, success?) = user_shares.dict_get?(256, address.slice_last(256));
     if (success?) {
         return (d~load_uint(32), -1);
@@ -97,7 +97,7 @@
 
         if (success?) {
             user_shares~dict_delete?(256, address_hash);
-            save_data(admin_address, user_shares, total_shares - existing_shares);
+            save_data(admin_address, user_shares);
             return 0;
         }
 
@@ -156,19 +156,19 @@
 }
 
 (int) get_prefix() impure method_id {
-    var (admin_address, _, _) = load_data();
+    var (admin_address, _) = load_data();
 
 ;;    var prefix = admin_address~load_msg_addr();
     return admin_address~load_uint(11);
 }
 
 (slice) get_admin_address() impure method_id {
-    var (admin_address, _, _) = load_data();
+    var (admin_address, _) = load_data();
     return admin_address;
 }
 
 (cell) get_users() impure method_id {
-    var (_, user_shares, _) = load_data();
+    var (_, user_shares) = load_data();
     return user_shares;
 }
 
