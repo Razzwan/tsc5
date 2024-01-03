@@ -78,8 +78,8 @@
         if (success?) {
             user_shares~dict_delete?(256, address_hash);
         }
-        user_shares~dict_add_builder?(256, address_hash, begin_cell().store_uint(new_shares + existing_shares, 32));
-        save_data(admin_address, user_shares, total_shares + new_shares);
+        user_shares~dict_add_builder?(256, address_hash, begin_cell().store_uint(new_shares, 32));
+        save_data(admin_address, user_shares, total_shares - existing_shares + new_shares);
 
         return 0;
     }
