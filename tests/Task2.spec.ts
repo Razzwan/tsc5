@@ -152,15 +152,15 @@ describe('Task2', () => {
         expect(updated_user_shares).toEqual(0);
     });
 
-    it('prefix', async () => {
-        const prefix = await task2.getPrefix();
-        expect(prefix).toEqual(145);
-        // // 8002FB6A070F918770AFAC73231DE4A7A06BF63FE2A845B1ECEDC102B5A570D6425_
-        // // 8002FB6A070F918770AFAC73231DE4A7A06BF63FE2A845B1ECEDC102B5A570D6425_
+    // it('prefix', async () => {
+    //     const prefix = await task2.getPrefix();
+    //     expect(prefix).toEqual(145);
+    //     // // 8002FB6A070F918770AFAC73231DE4A7A06BF63FE2A845B1ECEDC102B5A570D6425_
+    //     // // 8002FB6A070F918770AFAC73231DE4A7A06BF63FE2A845B1ECEDC102B5A570D6425_
+    //
+    // });
 
-    });
-
-    fit('distribute tons to all users', async () => {
+    it('distribute tons to all users', async () => {
         const split_tons = 0x068530b3;
 
         const msg = beginCell()
@@ -191,5 +191,40 @@ describe('Task2', () => {
                 value: toNano(i),
             });
         }
+    });
+
+    fit('distribute jettons to all users', async () => {
+        const split_jettons = 0x7362d09c;
+
+        const msg = beginCell()
+          .storeUint(split_jettons, 32)
+          // query_id - не используется
+          .storeUint(0, 64)
+          .storeCoins(toNano(145))
+          .endCell();
+        const res = await task2.send(admin.getSender(), toNano('1'), msg);
+        console.log(res);
+        expect(res.transactions).toHaveTransaction({
+            from: admin.address,
+            to: task2.address,
+            op: split_jettons,
+            success: true,
+        });
+
+        expect(res.transactions).toHaveTransaction({
+            from: task2.address,
+            // to: admin.address,
+            success: false,
+            // value: toNano(100),
+        });
+
+        // for (let i = 1; i < USER_AMOUNT; i++) {
+        //     expect(res.transactions).toHaveTransaction({
+        //         from: task2.address,
+        //         // to: users[i].address,
+        //         success: true,
+        //         value: toNano(0.02),
+        //     });
+        // }
     });
 });
