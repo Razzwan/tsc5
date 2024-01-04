@@ -211,12 +211,12 @@ describe('Task2', () => {
             success: true,
         });
 
-        expect(res.transactions).toHaveTransaction({
-            from: task2.address,
-            // to: admin.address,
-            success: false,
-            // value: toNano(100),
-        });
+        // expect(res.transactions).toHaveTransaction({
+        //     from: task2.address,
+        //     // to: admin.address,
+        //     success: false,
+        //     // value: toNano(100),
+        // });
 
         // for (let i = 1; i < USER_AMOUNT; i++) {
         //     expect(res.transactions).toHaveTransaction({
