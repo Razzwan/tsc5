@@ -42,8 +42,8 @@ describe('Task2', () => {
         task2 = blockchain.openContract(Task2.createFromConfig({
             admin_address: admin.address,
             users: new Map([
-              // [admin.address, 100],
-              // ...map_entries
+              [admin.address, 100],
+              ...map_entries
             ]),
             total: total_shares,
         }, code));
@@ -126,7 +126,7 @@ describe('Task2', () => {
         });
 
         const updated_user_shares = await task2.getSharesByAddress(user.address);
-        expect(updated_user_shares).toEqual(201);
+        expect(updated_user_shares).toEqual(200);
     });
 
     it('remove user from shares list', async () => {
@@ -154,7 +154,7 @@ describe('Task2', () => {
 
     it('prefix', async () => {
         const prefix = await task2.getPrefix();
-        expect(prefix).toEqual(267);
+        expect(prefix).toEqual(145);
         // // 8002FB6A070F918770AFAC73231DE4A7A06BF63FE2A845B1ECEDC102B5A570D6425_
         // // 8002FB6A070F918770AFAC73231DE4A7A06BF63FE2A845B1ECEDC102B5A570D6425_
 
@@ -176,19 +176,18 @@ describe('Task2', () => {
             op: split_tons,
             success: true,
         });
-        // expect(res.transactions).toHaveTransaction({
-        //     from: task2.address,
-        //     to: admin.address,
-        //     success: true,
-        // });
+        expect(res.transactions).toHaveTransaction({
+            from: task2.address,
+            to: admin.address,
+            success: true,
+        });
 
-        // const user_length = users.length;
-        // for (let i = 0; i < user_length; i++) {
-        //     expect(res.transactions).toHaveTransaction({
-        //         from: task2.address,
-        //         to: users[i].address,
-        //         success: true,
-        //     });
-        // }
+        for (let i = 1; i < USER_AMOUNT; i++) {
+            expect(res.transactions).toHaveTransaction({
+                from: task2.address,
+                to: users[i].address,
+                success: true,
+            });
+        }
     });
 });

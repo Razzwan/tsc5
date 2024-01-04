@@ -1,14 +1,5 @@
 #include "imports/stdlib.fc";
 
-(slice, int) dict_get?(cell dict, int key_len, slice index) asm(index dict key_len) "DICTGET" "NULLSWAPIFNOT";
-(cell, int) dict_add_builder?(cell dict, int key_len, slice index, builder value) asm(value index dict key_len) "DICTADDB";
-(cell, int) dict_delete?(cell dict, int key_len, slice index) asm(index dict key_len) "DICTDEL";
-
-;; value_min, index_min
-(slice, slice, int) dict_get_min?(cell dict, int key_len) asm "DICTMIN";
-;; value_next, index_next
-(slice, slice, int) dict_get_next?(cell dict, int key_len, slice index) asm(index dict key_len) "DICTGETNEXT";
-
 {-
     admin_address: MsgAddressInt
     users: (HashmapE 256 uint32)
@@ -28,10 +19,23 @@
     );
 }
 
+(int) get_total_shares(cell user_shares) impure inline_ref {
+    var (int address, slice shares, int success?) = udict_get_min?(user_shares, 256);
+    int total = 0;
+    while (success?) {
+        total += shares~load_uint(32);
+        (address, shares, success?) = udict_get_next?(user_shares, 256, address);
+    }
+
+    return total;
+}
+
 ;; shares success?
 (int, int) _get_shares_by_address(slice address) impure inline_ref {
     var (_, user_shares) = load_data();
-    var (d, success?) = user_shares.dict_get?(256, address.slice_last(256));
+    address~skip_bits(11);
+    int index = address~load_uint(256);
+    var (d, success?) = user_shares.udict_get?(256, index);
     if (success?) {
         return (d~load_uint(32), -1);
     }
@@ -74,12 +78,13 @@
 
         var (existing_shares, success?) = _get_shares_by_address(address);
 
-        slice address_hash = address.slice_last(256);
+        address~skip_bits(11);
+        int address_hash = address~load_uint(256);
 
         if (success?) {
-            user_shares~dict_delete?(256, address_hash);
+            user_shares~udict_delete_get?(256, address_hash);
         }
-        user_shares~dict_add_builder?(256, address_hash, begin_cell().store_uint(new_shares, 32));
+        user_shares~udict_set_builder(256, address_hash, begin_cell().store_uint(new_shares, 32));
         save_data(admin_address, user_shares);
 
         return 0;
@@ -95,10 +100,11 @@
 
         var (existing_shares, success?) = _get_shares_by_address(address);
 
-        slice address_hash = address.slice_last(256);
+        address~skip_bits(11);
+        int address_hash = address~load_uint(256);
 
         if (success?) {
-            user_shares~dict_delete?(256, address_hash);
+            user_shares~udict_delete_get?(256, address_hash);
             save_data(admin_address, user_shares);
             return 0;
         }
@@ -111,21 +117,22 @@
         {- split_ton#068530b3 query_id:uint64 = InternalMsgBody; -}
         var (query_id) = (in_msg_body~load_uint(64));
 
-        var (dict_val, dict_key, success?) = dict_get_min?(user_shares, 256);
+        var (dict_key, dict_val, success?) = udict_get_min?(user_shares, 256);
         if (~ success?) {
             return 122;
         }
 
         var [total_balance, _] = get_balance();
 
+        int total_shares = user_shares.get_total_shares();
         while (success?) {
-            int ton_amount = dict_val.preload_uint(32) * (total_balance - 50000000) / 100;
+            int ton_amount = dict_val.preload_uint(32) * (total_balance - 50000000) / total_shares;
             if (ton_amount) {
                 var msg = begin_cell()
                 .store_uint(0x18, 6)
                 .store_uint(4, 3)
                 .store_uint(0, 8)
-                .store_slice(dict_key)
+                .store_uint(dict_key, 256)
                 .store_coins(ton_amount)
                 .store_uint(0, 1 + 4 + 4)
                 .store_uint(query_id, 64)
@@ -135,7 +142,7 @@
                 send_raw_message(msg, 1);
             }
 
-            (dict_val, dict_key, success?) = dict_get_next?(user_shares, 256, dict_key);
+            (dict_key, dict_val, success?) = udict_get_next?(user_shares, 256, dict_key);
         }
 
         return 0;
@@ -158,10 +165,12 @@
 }
 
 (int) get_prefix() impure method_id {
-    var (admin_address, _) = load_data();
+    var (admin_address, user_shares) = load_data();
+;;
+;;;;    var prefix = admin_address~load_msg_addr();
+;;    return admin_address~load_uint(11);
 
-;;    var prefix = admin_address~load_msg_addr();
-    return admin_address~load_uint(11);
+    return user_shares.get_total_shares();
 }
 
 (slice) get_admin_address() impure method_id {
