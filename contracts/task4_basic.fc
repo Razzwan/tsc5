@@ -1,5 +1,183 @@
 #include "imports/stdlib.fc";
 
-() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+global int `go_.`, int `go_X`, int `go_!`, int `go_?`, int `go_S`, int `go_E`;
+
+(int) tlen (tuple t) asm "TLEN";
+forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
+
+;;(tuple, tuple) duplicate(tuple t) {
+;;    return (t, t);
+;;}
+
+() recv_internal(slice in_msg) impure {
 
 }
+
+(tuple) add_node_to_path(tuple t, int i, int j) {
+    tuple path_el = empty_tuple();
+    path_el~tpush(i);
+    path_el~tpush(j);
+
+    t = t.tpush(path_el);
+    return t;
+}
+
+
+(int, int) is_path_allowed(tuple t, tuple maze, int i, int j, int n, int m, tuple final_paths) impure method_id {
+    int fp_idx = 0;
+    int shorter_exists = 0;
+    repeat (final_paths.tlen()) {
+        if (final_paths.at(fp_idx).tlen() <= t.tlen()) {
+            shorter_exists = -1;
+        }
+        fp_idx += 1;
+    }
+
+    if (shorter_exists) {
+        return (0, 0);
+    }
+
+    if (i >= n) {
+        return (0, 0);
+    }
+
+    if (i < 0) {
+        return (0, 0);
+    }
+
+    if (j >= m) {
+        return (0, 0);
+    }
+
+    if (j < 0) {
+        return (0, 0);
+    }
+
+    int allowed? = 0;
+    int end? = 0;
+
+    if (maze.at(i).at(j) == `go_.`) {
+        allowed? = -1;
+        int idx = 0;
+        repeat (t.tlen()) {
+            if (t.at(idx).at(0) == i) {
+                if (t.at(idx).at(1) == j) {
+                    allowed? = 0;
+                }
+            }
+            idx += 1;
+        }
+    }
+
+    if (maze.at(i).at(j) == `go_E`) {
+        allowed? = -1;
+        end? = -1;
+        int idx = 0;
+        repeat (t.tlen()) {
+            if (t.at(idx).at(0) == i) {
+                if (t.at(idx).at(1) == j) {
+                    allowed? = 0;
+                    end? = 0;
+                }
+            }
+            idx += 1;
+        }
+    }
+
+    return (allowed?, end?);
+}
+
+(int, int, int, tuple) solve(int n, int m, tuple maze) impure method_id {
+    `go_.` = 46;
+    `go_X` = 88;
+    `go_?` = 63;
+    `go_S` = 83;
+    `go_E` = 69;
+    `go_!` = 33;
+
+    tuple start = empty_tuple();
+
+    int i = 0;
+    repeat (n) {
+        int j = 0;
+        repeat (m) {
+            if (maze.at(i).at(j) == `go_S`) {
+                start~tpush(i);
+                start~tpush(j);
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+
+    tuple final_paths = empty_tuple();
+
+    tuple first_path = empty_tuple();
+    first_path~tpush(start);
+
+    tuple paths = empty_tuple();
+    paths~tpush(first_path);
+
+    int active_path_count = 1;
+
+    while (active_path_count) {
+        active_path_count = 0;
+        tuple _paths = paths;
+        paths = empty_tuple();
+        while (_paths.tlen()) {
+            tuple path = _paths~tpop();
+            int imove = -1;
+            repeat (3) {
+                int jmove = -1;
+                repeat (3) {
+                    int inext = path.at(path.tlen() - 1).at(0) + imove;
+                    int jnext = path.at(path.tlen() - 1).at(1) + jmove;
+
+                    (int allowed?, int end?) = is_path_allowed(path, maze, inext, jnext, n, m, final_paths);
+                    if (end?) {
+                        final_paths~tpush(add_node_to_path(path,inext, jnext));
+                    } else {
+                        if (allowed?) {
+                            paths~tpush(add_node_to_path(path,inext, jnext));
+                            active_path_count += 1;
+                        }
+                    }
+
+                    jmove += 1;
+                }
+                imove += 1;
+            }
+        }
+    }
+
+    tuple res = empty_tuple();
+    i = 0;
+    repeat (n) {
+        int j = 0;
+        tuple row = empty_tuple();
+        repeat (m) {
+            int fp_idx = 0;
+            int must_be_changed? = 0;
+            repeat (final_paths.at(0).tlen()) {
+                if (final_paths.at(0).at(fp_idx).at(0) == i) {
+                    if (final_paths.at(0).at(fp_idx).at(1) == j) {
+                        must_be_changed? = -1;
+                    }
+                }
+
+                fp_idx += 1;
+            }
+            if ((maze.at(i).at(j) == `go_.`) & must_be_changed?) {
+                row~tpush(`go_!`);
+            } else {
+                row~tpush(maze.at(i).at(j));
+            }
+            j += 1;
+        }
+        res~tpush(row);
+        i += 1;
+    }
+
+    return (-1, 100, final_paths.at(0).tlen(), res);
+}
+
