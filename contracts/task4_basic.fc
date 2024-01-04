@@ -178,6 +178,6 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
         i += 1;
     }
 
-    return (-1, 100, final_paths.at(0).tlen(), res);
+    return (-1, 100, final_paths.at(0).tlen() - 2, res);
 }
 
