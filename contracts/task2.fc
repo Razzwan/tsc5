@@ -181,12 +181,12 @@ builder store_int_address256(builder b, int address) {
                         .store_int_address256(dict_key)
                         .store_int(false, 1)
                         .store_coins(1)
-;;                        .store_uint(0, 1)
+                        .store_int(false, 1)
                         .end_cell();
 
                 var msg = begin_cell()
                 .store_uint(0x18, 6)
-                .store_slice("EQCnEWNHi38OLtH1lMTvVW7KJSMneSKdGF9GsEODBt21tmyU"a)
+                .store_slice(my_address())
                 .store_coins(20000000)
                 .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1)
                 .store_uint(1, 1)
