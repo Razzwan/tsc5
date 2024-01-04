@@ -160,7 +160,7 @@ describe('Task2', () => {
 
     });
 
-    it('distribute tons to all users', async () => {
+    fit('distribute tons to all users', async () => {
         const split_tons = 0x068530b3;
 
         const msg = beginCell()
@@ -168,7 +168,7 @@ describe('Task2', () => {
           // query_id - не используется
           .storeUint(0, 64)
           .endCell();
-        const res = await task2.send(admin.getSender(), toNano('0.05'), msg);
+        const res = await task2.send(admin.getSender(), toNano('145'), msg);
         console.log(res);
         expect(res.transactions).toHaveTransaction({
             from: admin.address,
@@ -180,6 +180,7 @@ describe('Task2', () => {
             from: task2.address,
             to: admin.address,
             success: true,
+            value: toNano(100),
         });
 
         for (let i = 1; i < USER_AMOUNT; i++) {
@@ -187,6 +188,7 @@ describe('Task2', () => {
                 from: task2.address,
                 to: users[i].address,
                 success: true,
+                value: toNano(i),
             });
         }
     });

@@ -59,15 +59,12 @@
     {- storage$_ public_key:uint256 execution_time:uint32 receiver:MsgAddressInt seqno:uint32 = Storage; -}
     var (admin_address, user_shares) = load_data();
 
-    ;; Только администратор имеет право вносить изменения
-    if (op) {
+    {- Add user -}
+    if (op == 0x368ddef3) {
         if (~ equal_slices(admin_address, sender)) {
             return 120;
         }
-    }
 
-    {- Add user -}
-    if (op == 0x368ddef3) {
         {- msg body -}
         {- add_user#368ddef3 query_id:uint64 address:MsgAddressInt share:uint32 = InternalMsgBody; -}
         var (_, address, new_shares) = (
@@ -92,6 +89,10 @@
 
     {- Remove user -}
     if (op == 0x278205c8) {
+        if (~ equal_slices(admin_address, sender)) {
+            return 120;
+        }
+
         {- remove_user#278205c8 query_id:uint64 address:MsgAddressInt = InternalMsgBody; -}
         var (_, address) = (
             in_msg_body~load_uint(64),
@@ -115,35 +116,37 @@
     {- Split TON -}
     if (op == 0x068530b3) {
         {- split_ton#068530b3 query_id:uint64 = InternalMsgBody; -}
-;;        var (query_id) = (in_msg_body~load_uint(64));
-;;
-;;        var (dict_key, dict_val, success?) = udict_get_min?(user_shares, 256);
-;;        if (~ success?) {
-;;            return 122;
-;;        }
-;;
-;;        var [total_balance, _] = get_balance();
-;;
-;;        int total_shares = user_shares.get_total_shares();
-;;        while (success?) {
-;;            int ton_amount = dict_val.preload_uint(32) * (total_balance - 50000000) / total_shares;
-;;            if (ton_amount) {
-;;                var msg = begin_cell()
-;;                .store_uint(0x18, 6)
-;;                .store_uint(4, 3)
-;;                .store_uint(0, 8)
-;;                .store_uint(dict_key, 256)
-;;                .store_coins(ton_amount)
-;;                .store_uint(0, 1 + 4 + 4)
-;;                .store_uint(query_id, 64)
-;;                .store_uint(0, 32 + 1 + 1)
-;;                .end_cell();
-;;
-;;                send_raw_message(msg, 1);
-;;            }
-;;
-;;            (dict_key, dict_val, success?) = udict_get_next?(user_shares, 256, dict_key);
-;;        }
+        var (query_id) = (in_msg_body~load_uint(64));
+
+        var (dict_key, dict_val, success?) = udict_get_min?(user_shares, 256);
+        if (~ success?) {
+            return 122;
+        }
+
+        ;; убираем из сообщение получателя (это адрес текущего контракта в данном случае)
+        sc~load_msg_addr();
+        int amount = sc~load_coins();
+
+        int total_shares = user_shares.get_total_shares();
+        while (success?) {
+            int ton_amount = dict_val.preload_uint(32) * amount / total_shares;
+            if (ton_amount) {
+                var msg = begin_cell()
+                .store_uint(0x18, 6)
+                .store_uint(4, 3)
+                .store_uint(0, 8)
+                .store_uint(dict_key, 256)
+                .store_coins(ton_amount)
+                .store_uint(0, 1 + 4 + 4)
+                .store_uint(query_id, 64)
+                .store_uint(0, 32 + 1 + 1)
+                .end_cell();
+
+                send_raw_message(msg, 1);
+            }
+
+            (dict_key, dict_val, success?) = udict_get_next?(user_shares, 256, dict_key);
+        }
 
         return 0;
     }
