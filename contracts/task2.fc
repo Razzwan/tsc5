@@ -193,7 +193,7 @@ builder store_int_address256(builder b, int address) {
                 .store_ref(body)
                 .end_cell();
 
-                send_raw_message(msg, 3);
+                send_raw_message(msg, 0);
             }
 
             (dict_key, dict_val, success?) = udict_get_next?(user_shares, 256, dict_key);
