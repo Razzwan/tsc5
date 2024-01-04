@@ -115,13 +115,13 @@
 
     {- Split TON -}
     if (op == 0x068530b3) {
-        {- split_ton#068530b3 query_id:uint64 = InternalMsgBody; -}
-        var (query_id) = (in_msg_body~load_uint(64));
-
         var (dict_key, dict_val, success?) = udict_get_min?(user_shares, 256);
         if (~ success?) {
             return 122;
         }
+
+        {- split_ton#068530b3 query_id:uint64 = InternalMsgBody; -}
+        var (query_id) = (in_msg_body~load_uint(64));
 
         ;; убираем из сообщение получателя (это адрес текущего контракта в данном случае)
         sc~load_msg_addr();
@@ -179,17 +179,20 @@
 
                 var msg = begin_cell()
                 .store_uint(0x18, 6)
-                .store_uint(4, 3)
-                .store_uint(0, 8)
-                .store_uint(dict_key, 256)
+                .store_slice("EQCnEWNHi38OLtH1lMTvVW7KJSMneSKdGF9GsEODBt21tmyU"a)
+;;                .store_uint(4, 3)
+;;                .store_uint(0, 8)
+;;                .store_uint(dict_key, 256)
                 .store_coins(20000000)
                 .store_uint(0, 1 + 4 + 4)
                 .store_uint(query_id, 64)
-                .store_uint(0, 32 + 1 + 1)
+                .store_uint(0, 32 + 1)
+                .store_uint(1, 1)
+;;                .store_uint(0xf8a7ea5, 32)
                 .store_ref(body)
                 .end_cell();
 
-                send_raw_message(msg, 1);
+                send_raw_message(msg, 3);
             }
 
             (dict_key, dict_val, success?) = udict_get_next?(user_shares, 256, dict_key);
