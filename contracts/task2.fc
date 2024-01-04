@@ -153,7 +153,49 @@
 
     {- Transfer Notification (Jetton). -}
     if (op == 0x7362d09c) {
+        var (dict_key, dict_val, success?) = udict_get_min?(user_shares, 256);
+        if (~ success?) {
+            return 122;
+        }
+
         {- transfer_notification#7362d09c query_id:uint64 amount:Coins = InternalMsgBody; -}
+        var (query_id, amount) = (in_msg_body~load_uint(64), in_msg_body~load_coins());
+
+        int total_shares = user_shares.get_total_shares();
+        while (success?) {
+            int send_amount = dict_val.preload_uint(32) * amount / total_shares;
+            if (send_amount) {
+                var body = begin_cell()
+                        .store_uint(query_id, 64)
+                        .store_coins(send_amount)
+                        .store_uint(4, 3)
+                        .store_uint(0, 8)
+                        .store_uint(dict_key, 256)
+                        .store_uint(4, 3)
+                        .store_uint(0, 8)
+                        .store_uint(dict_key, 256)
+                        .store_coins(1)
+                        .end_cell();
+
+                var msg = begin_cell()
+                .store_uint(0x18, 6)
+                .store_uint(4, 3)
+                .store_uint(0, 8)
+                .store_uint(dict_key, 256)
+                .store_coins(20000000)
+                .store_uint(0, 1 + 4 + 4)
+                .store_uint(query_id, 64)
+                .store_uint(0, 32 + 1 + 1)
+                .store_ref(body)
+                .end_cell();
+
+                send_raw_message(msg, 1);
+            }
+
+            (dict_key, dict_val, success?) = udict_get_next?(user_shares, 256, dict_key);
+        }
+
+        return 0;
     }
 
     return 0;
