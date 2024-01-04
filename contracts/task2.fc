@@ -79,7 +79,7 @@ builder store_int_address256(builder b, int address) {
             in_msg_body~load_uint(32)
         );
 
-        var (existing_shares, success?) = _get_shares_by_address(address);
+        var (_, success?) = _get_shares_by_address(address);
 
         address~skip_bits(11);
         int address_hash = address~load_uint(256);
@@ -105,7 +105,7 @@ builder store_int_address256(builder b, int address) {
             in_msg_body~load_msg_addr()
         );
 
-        var (existing_shares, success?) = _get_shares_by_address(address);
+        var (_, success?) = _get_shares_by_address(address);
 
         address~skip_bits(11);
         int address_hash = address~load_uint(256);
@@ -211,20 +211,6 @@ builder store_int_address256(builder b, int address) {
     if (handled) {
         throw(handled);
     }
-}
-
-(int) get_prefix() impure method_id {
-    var (admin_address, user_shares) = load_data();
-;;
-;;;;    var prefix = admin_address~load_msg_addr();
-;;    return admin_address~load_uint(11);
-
-    return user_shares.get_total_shares();
-}
-
-(slice) get_admin_address() impure method_id {
-    var (admin_address, _) = load_data();
-    return admin_address;
 }
 
 (cell) get_users() impure method_id {
