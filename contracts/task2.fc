@@ -174,7 +174,7 @@ builder store_int_address256(builder b, int address) {
                 ;;                 forward_ton_amount:(VarUInteger 16) forward_payload:(Either Cell ^Cell)
                 ;;                 = InternalMsgBody;
                 var body = begin_cell()
-                        .store_uint(0xf8a7ea5, 32)
+;;                        .store_uint(0xf8a7ea5, 32)
                         .store_uint(query_id, 64)
                         .store_coins(send_amount)
                         .store_int_address256(dict_key)
