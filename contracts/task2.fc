@@ -73,13 +73,13 @@ builder store_int_address256(builder b, int address) {
 
         {- msg body -}
         {- add_user#368ddef3 query_id:uint64 address:MsgAddressInt share:uint32 = InternalMsgBody; -}
-        var (_, address, new_shares) = (
+        var (query_id, address, new_shares) = (
             in_msg_body~load_uint(64),
             in_msg_body~load_msg_addr(),
             in_msg_body~load_uint(32)
         );
 
-        var (_, success?) = _get_shares_by_address(address);
+        var (existing_shares, success?) = _get_shares_by_address(address);
 
         address~skip_bits(11);
         int address_hash = address~load_uint(256);
@@ -100,12 +100,12 @@ builder store_int_address256(builder b, int address) {
         }
 
         {- remove_user#278205c8 query_id:uint64 address:MsgAddressInt = InternalMsgBody; -}
-        var (_, address) = (
+        var (query_id, address) = (
             in_msg_body~load_uint(64),
             in_msg_body~load_msg_addr()
         );
 
-        var (_, success?) = _get_shares_by_address(address);
+        var (existing_shares, success?) = _get_shares_by_address(address);
 
         address~skip_bits(11);
         int address_hash = address~load_uint(256);
