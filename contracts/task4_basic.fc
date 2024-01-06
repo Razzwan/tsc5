@@ -126,28 +126,42 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
         paths = empty_tuple();
         while (_paths.tlen()) {
             tuple path = _paths~tpop();
-            int imove = -1;
-            repeat (3) {
-                int jmove = -1;
+            if (active_path_count < 8) {
+                int imove = -1;
                 repeat (3) {
-                    int inext = path.at(path.tlen() - 1).at(0) + imove;
-                    int jnext = path.at(path.tlen() - 1).at(1) + jmove;
+                    int jmove = -1;
+                    repeat (3) {
+                        int inext = path.at(path.tlen() - 1).at(0) + imove;
+                        int jnext = path.at(path.tlen() - 1).at(1) + jmove;
 
-                    (int allowed?, int end?) = is_path_allowed(path, maze, inext, jnext, n, m, final_paths);
-                    if (end?) {
-                        final_paths~tpush(add_node_to_path(path,inext, jnext));
-                    } else {
-                        if (allowed?) {
-                            paths~tpush(add_node_to_path(path,inext, jnext));
-                            active_path_count += 1;
+                        (int allowed?, int end?) = is_path_allowed(path, maze, inext, jnext, n, m, final_paths);
+                        if (end?) {
+                            final_paths~tpush(add_node_to_path(path,inext, jnext));
+                        } else {
+                            if (allowed?) {
+                                paths~tpush(add_node_to_path(path,inext, jnext));
+                                active_path_count += 1;
+                            }
                         }
-                    }
 
-                    jmove += 1;
+                        jmove += 1;
+                    }
+                    imove += 1;
                 }
-                imove += 1;
+            } else {
+                paths~tpush(path);
             }
         }
+    }
+
+    int fn_path_idx = 1;
+    tuple final_path = final_paths.at(0);
+    repeat (final_paths.tlen() - 1) {
+        if (final_paths.at(fn_path_idx).tlen() < final_path.tlen()) {
+            final_path = final_paths.at(fn_path_idx);
+        }
+
+        fn_path_idx += 1;
     }
 
     tuple res = empty_tuple();
@@ -158,9 +172,9 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
         repeat (m) {
             int fp_idx = 0;
             int must_be_changed? = 0;
-            repeat (final_paths.at(0).tlen()) {
-                if (final_paths.at(0).at(fp_idx).at(0) == i) {
-                    if (final_paths.at(0).at(fp_idx).at(1) == j) {
+            repeat (final_path.tlen()) {
+                if (final_path.at(fp_idx).at(0) == i) {
+                    if (final_path.at(fp_idx).at(1) == j) {
                         must_be_changed? = -1;
                     }
                 }
@@ -178,6 +192,6 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
         i += 1;
     }
 
-    return (-1, 100, final_paths.at(0).tlen() - 2, res);
+    return (-1, 100, final_path.tlen(), res);
 }
 
