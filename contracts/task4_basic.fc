@@ -433,7 +433,7 @@ forall X -> (X) get_last(tuple path) {
 
             if (allowed?) {
                 (cur, path) = add_int_node_to_path(path, i_next, j_next, 0);
-                ~dump(path);
+;;                ~dump(path);
             } else {
                 int attemp_prev = cur~tpop();
                 if (attemp_prev < 7) {
