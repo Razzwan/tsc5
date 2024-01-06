@@ -2,6 +2,15 @@
 
 global int `go_.`, int `go_X`, int `go_!`, int `go_?`, int `go_S`, int `go_E`;
 
+global (int, int, int, int) dir_1;
+global (int, int, int, int) dir_2;
+global (int, int, int, int) dir_3;
+global (int, int, int, int) dir_4;
+global (int, int, int, int) dir_5;
+global (int, int, int, int) dir_6;
+global (int, int, int, int) dir_7;
+global (int, int, int, int) dir_8;
+
 (int) tlen (tuple t) asm "TLEN";
 forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
 
@@ -214,15 +223,6 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
     (int i_move, int i_end?) = get_move(cur.at(0), end.at(0));
     (int j_move, int j_end?) = get_move(cur.at(1), end.at(1));
 
-    var dir_1 = (-1, -1, 0, 0);
-    var dir_2 = ( 0, -1, 0, 0);
-    var dir_3 = ( 1, -1, 0, 0);
-    var dir_4 = ( 1,  0, 0, 0);
-    var dir_5 = ( 1,  1, 0, 0);
-    var dir_6 = ( 0,  1, 0, 0);
-    var dir_7 = (-1,  1, 0, 0);
-    var dir_8 = (-1,  0, 0, 0);
-
     if (attempt == 0) {
         return (i_move, j_move, i_end?, j_end?);
     }
@@ -426,6 +426,15 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
     `go_S` = 83;
     `go_E` = 69;
     `go_!` = 33;
+
+    dir_1 = (-1, -1, 0, 0);
+    dir_2 = ( 0, -1, 0, 0);
+    dir_3 = ( 1, -1, 0, 0);
+    dir_4 = ( 1,  0, 0, 0);
+    dir_5 = ( 1,  1, 0, 0);
+    dir_6 = ( 0,  1, 0, 0);
+    dir_7 = (-1,  1, 0, 0);
+    dir_8 = (-1,  0, 0, 0);
 
     n = maze.tlen();
     m = maze.at(0).tlen();

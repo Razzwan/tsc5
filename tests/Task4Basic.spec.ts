@@ -4,6 +4,7 @@ import { Task4Basic } from '../wrappers/Task4Basic';
 import '@ton-community/test-utils';
 import { compile } from '@ton-community/blueprint';
 import {coloredMaze} from '../util/colored-maze';
+import {gasUsage} from '../util/gas-usage';
 
 describe('Task4Basic', () => {
     let code: Cell;
@@ -47,8 +48,8 @@ describe('Task4Basic', () => {
             ['.', '.', '.', '.', 'X', 'X', 'X', '.'],
             ['.', '.', '.', '.', 'X', 'X', '?', 'X'],
             ['.', '.', '.', '.', 'X', '.', 'X', 'X'],
-            ['X', 'X', '.', '.', 'X', '.', 'X', 'X'],
-            ['X', 'X', 'X', '.', '.', '.', 'X', 'X'],
+            ['.', '.', '.', '.', 'X', '.', 'X', 'X'],
+            ['.', '.', '.', '.', '.', '.', 'X', 'X'],
         ];
 
         // 1 -> 2 8 3 7 4 6 5
