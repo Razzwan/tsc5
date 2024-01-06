@@ -41,8 +41,8 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
 }
 
 
-;; allowed? new_q_mark_count
-(int, int) is_path_allowed(tuple path, tuple maze, int i, int j, int n, int m, int q_mark_count) impure method_id {
+;; allowed? new_q_mark_count new_x_count
+(int, int, int) is_path_allowed(tuple path, tuple maze, int i, int j, int n, int m, int q_mark_count, int x_mark_count) impure method_id {
     int idx = 0;
     int is_blocked? = 0;
 
@@ -66,23 +66,23 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
     }
 
     if (is_blocked?) {
-        return (0, q_mark_count);
+        return (0, q_mark_count, x_mark_count);
     }
 
     if (i >= n) {
-        return (0, q_mark_count);
+        return (0, q_mark_count, x_mark_count);
     }
 
     if (i < 0) {
-        return (0, q_mark_count);
+        return (0, q_mark_count, x_mark_count);
     }
 
     if (j >= m) {
-        return (0, q_mark_count);
+        return (0, q_mark_count, x_mark_count);
     }
 
     if (j < 0) {
-        return (0, q_mark_count);
+        return (0, q_mark_count, x_mark_count);
     }
 
     int allowed? = 0;
@@ -102,7 +102,14 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
         }
     }
 
-    return (allowed?, q_mark_count);
+    if (maze.at(i).at(j) == `go_X`) {
+        if (x_mark_count > 0) {
+            allowed? = -1;
+            x_mark_count = q_mark_count - 1;
+        }
+    }
+
+    return (allowed?, q_mark_count, x_mark_count);
 }
 
 (tuple) prepare_result(tuple maze, tuple path, int n, int m) {
@@ -452,6 +459,10 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
     int q_mark_cur = 0;
     int max_q_mark = find_point_amount(maze, `go_?`, n, m);
 
+    int x_amount = 0;
+    int x_cur = 0;
+    int max_x_mark = find_point_amount(maze, `go_X`, n, m);
+
     do {
         (int i_move, int j_move, int i_end?, int j_end?) = get_dirrection(cur, end);
 
@@ -461,8 +472,9 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
             int i_next = cur.at(0) + i_move;
             int j_next = cur.at(1) + j_move;
 
-            (int allowed?, int new_q_mark_cur) = is_path_allowed(path, maze, i_next, j_next, n, m, q_mark_cur);
+            (int allowed?, int new_q_mark_cur, int x_cur_am__) = is_path_allowed(path, maze, i_next, j_next, n, m, q_mark_cur);
             q_mark_cur = new_q_mark_cur;
+            x_cur = x_cur_am__;
 
             if (allowed?) {
                 (cur, path) = add_int_node_to_path(path, i_next, j_next, 0);
@@ -480,15 +492,30 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
                             q_mark_cur += 1;
                         }
 
+                        if (maze.at(removed_item.at(0)).at(removed_item.at(1)) == `go_X`) {
+                            x_cur += 1;
+                        }
+
                         cur = path~tpop();
                         int prev_attemp = cur~tpop();
                         cur~tpush(prev_attemp + 1);
                         path~tpush(cur);
                     } else {
                         if (q_mark_amount > max_q_mark) {
-                            ;; нет пути
-                            path = empty_tuple();
-                            cur = end;
+                            if (x_amount > max_x_mark) {
+                                ;; нет пути
+                                path = empty_tuple();
+                                cur = end;
+                            } else {
+                                x_amount += 1;
+                                x_cur = x_amount;
+
+                                cur = path~tpop();
+                                cur~tpop();
+                                cur~tpush(0);
+                                path~tpush(cur);
+                            }
+
                         } else {
                             q_mark_amount += 1;
                             q_mark_cur = q_mark_amount;
