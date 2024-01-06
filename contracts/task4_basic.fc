@@ -102,7 +102,7 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
 
 (tuple) prepare_result(tuple maze, tuple path, int n, int m) {
     tuple res = empty_tuple();
-    int i = 0;
+    int i = 1;
     repeat (path.tlen()) {
         tuple t = empty_tuple();
         t~tpush(path.at(i).at(0));
