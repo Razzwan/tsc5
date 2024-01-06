@@ -505,5 +505,9 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
 
     } until (equal_dots?(end, cur));
 
-    return (-1, q_mark_amount, path.tlen() - 1, prepare_result(maze, path, n, m));
+    if (path.tlen()) {
+        return (-1, q_mark_amount, path.tlen() - 1, prepare_result(maze, path, n, m));
+    }
+
+    return (-1, 0, 0, null());
 }
