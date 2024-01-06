@@ -458,6 +458,6 @@ forall X -> (X) get_last(tuple path) {
 
     } until (equal_dots?(end, cur));
 
-    return (-1, path.tlen() ? 100 : 0, path.tlen(), prepare_result(maze, path, n, m));
+    return (-1, path.tlen() ? 100 : 0, path.tlen() - 1, prepare_result(maze, path, n, m));
 }
 
