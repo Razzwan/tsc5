@@ -101,38 +101,49 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
 }
 
 (tuple) prepare_result(tuple maze, tuple path, int n, int m) {
-    if (path.tlen() == 0) {
-        return empty_tuple();
-    }
     tuple res = empty_tuple();
     int i = 0;
-    repeat (n) {
-        int j = 0;
-        tuple row = empty_tuple();
-        repeat (m) {
-            int fp_idx = 0;
-            int must_be_changed? = 0;
-            repeat (path.tlen()) {
-                if (path.at(fp_idx).at(0) == i) {
-                    if (path.at(fp_idx).at(1) == j) {
-                        must_be_changed? = -1;
-                    }
-                }
-
-                fp_idx += 1;
-            }
-            if (((maze.at(i).at(j) == `go_.`) | (maze.at(i).at(j) == `go_?`)) & must_be_changed?) {
-                row~tpush(`go_!`);
-            } else {
-                row~tpush(maze.at(i).at(j));
-            }
-            j += 1;
-        }
-        res~tpush(row);
+    repeat (path.tlen()) {
+        tuple t = empty_tuple();
+        t~tpush(path.at(i).at(0));
+        t~tpush(path.at(i).at(1));
+        res~tpush(t);
         i += 1;
     }
 
     return res;
+;;    if (path.tlen() == 0) {
+;;        return empty_tuple();
+;;    }
+;;    tuple res = empty_tuple();
+;;    int i = 0;
+;;    repeat (n) {
+;;        int j = 0;
+;;        tuple row = empty_tuple();
+;;        repeat (m) {
+;;            int fp_idx = 0;
+;;            int must_be_changed? = 0;
+;;            repeat (path.tlen()) {
+;;                if (path.at(fp_idx).at(0) == i) {
+;;                    if (path.at(fp_idx).at(1) == j) {
+;;                        must_be_changed? = -1;
+;;                    }
+;;                }
+;;
+;;                fp_idx += 1;
+;;            }
+;;            if (((maze.at(i).at(j) == `go_.`) | (maze.at(i).at(j) == `go_?`)) & must_be_changed?) {
+;;                row~tpush(`go_!`);
+;;            } else {
+;;                row~tpush(maze.at(i).at(j));
+;;            }
+;;            j += 1;
+;;        }
+;;        res~tpush(row);
+;;        i += 1;
+;;    }
+;;
+;;    return res;
 }
 
 (tuple) find_point(tuple maze, int point, int m) {
@@ -466,7 +477,7 @@ forall X -> (X) get_last(tuple path) {
 
             if (allowed?) {
                 (cur, path) = add_int_node_to_path(path, i_next, j_next, 0);
-;;                ~dump(path);
+                ~dump(path);
             } else {
                 int attemp_prev = cur~tpop();
                 if (attemp_prev < 7) {
@@ -499,7 +510,7 @@ forall X -> (X) get_last(tuple path) {
                             path~tpush(cur);
 
 ;;                            ~dump("000000000000000"s);
-;;                            ~dump(q_mark_cur);
+                            ~dump(q_mark_cur);
                         }
                     }
                 }

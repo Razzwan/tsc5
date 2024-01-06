@@ -22,7 +22,7 @@ describe('Task4Basic', () => {
 
         const deployer = await blockchain.treasury('deployer');
 
-        const deployResult = await task4Basic.sendDeploy(deployer.getSender(), toNano('0.05'));
+        const deployResult = await task4Basic.sendDeploy(deployer.getSender(), toNano('100'));
 
         expect(deployResult.transactions).toHaveTransaction({
             from: deployer.address,
@@ -39,13 +39,16 @@ describe('Task4Basic', () => {
 
     it('get simplest result', async () => {
         const was: any = [
-            ['.', '.', '.', '.'],
-            ['.', 'X', 'S', '.'],
-            ['?', 'X', 'X', '?'],
-            ['?', 'X', '?', 'X'],
-            ['.', 'X', '.', 'X'],
-            ['.', 'X', '.', 'X'],
-            ['.', '.', 'E', '.'],
+            ['X', 'X', 'X', 'X', 'X', 'X', 'E', '.'],
+            ['X', 'X', '.', 'X', 'X', 'X', 'X', '.'],
+            ['X', '.', 'X', '.', 'X', 'X', '.', 'X'],
+            ['.', '?', 'X', 'S', 'X', 'X', 'X', '.'],
+            ['X', '?', 'X', 'X', 'X', 'X', 'X', '.'],
+            ['X', 'X', '.', '.', 'X', 'X', 'X', '.'],
+            ['X', 'X', '.', '.', 'X', 'X', '?', 'X'],
+            ['X', 'X', 'X', '.', 'X', '.', 'X', 'X'],
+            ['X', 'X', 'X', '.', 'X', '.', 'X', 'X'],
+            ['X', 'X', 'X', 'X', '.', '.', 'X', 'X'],
         ];
 
         const block_m: any = [
