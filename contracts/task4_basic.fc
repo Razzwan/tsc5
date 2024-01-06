@@ -13,55 +13,54 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
 
 }
 
-(tuple) add_node_to_path(tuple t, int i, int j) {
-    tuple path_el = empty_tuple();
-    path_el~tpush(i);
-    path_el~tpush(j);
+;; cur_el path
+(tuple, tuple) add_int_node_to_path(tuple path, int i, int j, int attempt) {
+    tuple cur_el = empty_tuple();
+    cur_el~tpush(i);
+    cur_el~tpush(j);
+    cur_el~tpush(attempt);
 
-    t = t.tpush(path_el);
-    return t;
+    path = path.tpush(cur_el);
+    return (cur_el, path);
+}
+
+;; cur_el path
+(tuple, tuple) add_tuple_node_to_path(tuple path, tuple point) {
+    tuple cur_el = empty_tuple();
+    cur_el~tpush(point.at(0));
+    cur_el~tpush(point.at(1));
+    cur_el~tpush(point.tlen() == 2 ? 0 : point.at(2));
+
+    path = path.tpush(cur_el);
+    return (cur_el, path);
 }
 
 
-(int, int) is_path_allowed(tuple t, tuple maze, int i, int j, int n, int m, tuple final_paths) impure method_id {
-    int fp_idx = 0;
-    int shorter_exists = 0;
-    repeat (final_paths.tlen()) {
-        if (final_paths.at(fp_idx).tlen() <= t.tlen()) {
-            shorter_exists = -1;
-        }
-        fp_idx += 1;
-    }
-
-    if (shorter_exists) {
-        return (0, 0);
-    }
-
+(int) is_path_allowed(tuple path, tuple maze, int i, int j, int n, int m) impure method_id {
     if (i >= n) {
-        return (0, 0);
+        return (0);
     }
 
     if (i < 0) {
-        return (0, 0);
+        return (0);
     }
 
     if (j >= m) {
-        return (0, 0);
+        return (0);
     }
 
     if (j < 0) {
-        return (0, 0);
+        return (0);
     }
 
     int allowed? = 0;
-    int end? = 0;
 
     if (maze.at(i).at(j) == `go_.`) {
         allowed? = -1;
         int idx = 0;
-        repeat (t.tlen()) {
-            if (t.at(idx).at(0) == i) {
-                if (t.at(idx).at(1) == j) {
+        repeat (path.tlen()) {
+            if (path.at(idx).at(0) == i) {
+                if (path.at(idx).at(1) == j) {
                     allowed? = 0;
                 }
             }
@@ -71,110 +70,23 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
 
     if (maze.at(i).at(j) == `go_E`) {
         allowed? = -1;
-        end? = -1;
-        int idx = 0;
-        repeat (t.tlen()) {
-            if (t.at(idx).at(0) == i) {
-                if (t.at(idx).at(1) == j) {
-                    allowed? = 0;
-                    end? = 0;
-                }
-            }
-            idx += 1;
-        }
     }
 
-    return (allowed?, end?);
+    return (allowed?);
 }
 
-(int, int, int, tuple) solve(int n, int m, tuple maze) impure method_id {
-    `go_.` = 46;
-    `go_X` = 88;
-    `go_?` = 63;
-    `go_S` = 83;
-    `go_E` = 69;
-    `go_!` = 33;
-
-    tuple start = empty_tuple();
-
-    int i = 0;
-    repeat (n) {
-        int j = 0;
-        repeat (m) {
-            if (maze.at(i).at(j) == `go_S`) {
-                start~tpush(i);
-                start~tpush(j);
-            }
-            j += 1;
-        }
-        i += 1;
-    }
-
-    tuple final_paths = empty_tuple();
-
-    tuple first_path = empty_tuple();
-    first_path~tpush(start);
-
-    tuple paths = empty_tuple();
-    paths~tpush(first_path);
-
-    int active_path_count = 1;
-
-    while (active_path_count) {
-        active_path_count = 0;
-        tuple _paths = paths;
-        paths = empty_tuple();
-        while (_paths.tlen()) {
-            tuple path = _paths~tpop();
-            if (active_path_count < 8) {
-                int imove = -1;
-                repeat (3) {
-                    int jmove = -1;
-                    repeat (3) {
-                        int inext = path.at(path.tlen() - 1).at(0) + imove;
-                        int jnext = path.at(path.tlen() - 1).at(1) + jmove;
-
-                        (int allowed?, int end?) = is_path_allowed(path, maze, inext, jnext, n, m, final_paths);
-                        if (end?) {
-                            final_paths~tpush(add_node_to_path(path,inext, jnext));
-                        } else {
-                            if (allowed?) {
-                                paths~tpush(add_node_to_path(path,inext, jnext));
-                                active_path_count += 1;
-                            }
-                        }
-
-                        jmove += 1;
-                    }
-                    imove += 1;
-                }
-            } else {
-                paths~tpush(path);
-            }
-        }
-    }
-
-    int fn_path_idx = 1;
-    tuple final_path = final_paths.at(0);
-    repeat (final_paths.tlen() - 1) {
-        if (final_paths.at(fn_path_idx).tlen() < final_path.tlen()) {
-            final_path = final_paths.at(fn_path_idx);
-        }
-
-        fn_path_idx += 1;
-    }
-
+(tuple) prepare_result(tuple maze, tuple path, int n, int m) {
     tuple res = empty_tuple();
-    i = 0;
+    int i = 0;
     repeat (n) {
         int j = 0;
         tuple row = empty_tuple();
         repeat (m) {
             int fp_idx = 0;
             int must_be_changed? = 0;
-            repeat (final_path.tlen()) {
-                if (final_path.at(fp_idx).at(0) == i) {
-                    if (final_path.at(fp_idx).at(1) == j) {
+            repeat (path.tlen()) {
+                if (path.at(fp_idx).at(0) == i) {
+                    if (path.at(fp_idx).at(1) == j) {
                         must_be_changed? = -1;
                     }
                 }
@@ -192,6 +104,336 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
         i += 1;
     }
 
-    return (-1, 100, final_path.tlen(), res);
+    return res;
+}
+
+(tuple) find_point(tuple maze, int point, int m) {
+    tuple res = empty_tuple();
+
+    int i = 0;
+    do {
+        int j = 0;
+        repeat (m) {
+            if (maze.at(i).at(j) == point) {
+                res~tpush(i);
+                res~tpush(j);
+            }
+            j += 1;
+        }
+        i += 1;
+    } until (res.tlen());
+
+    return res;
+}
+
+(int) equal_dots?(tuple a, tuple b) {
+    if (a.at(0) == b.at(0)) {
+        if (a.at(1) == b.at(1)) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+forall X -> (X) get_last(tuple path) {
+    return path.at(path.tlen() - 1);
+}
+
+;; move end?
+(int, int) get_move(int cur_pos, int end_pos) {
+    int move = 0;
+
+    int end? = 0;
+    if (cur_pos < end_pos) {
+        move = 1;
+    } else {
+        if (cur_pos > end_pos) {
+            move = -1;
+        } else {
+            end? = -1;
+        }
+    }
+
+    return (move, end?);
+}
+
+(int) is_var(int i, int j, (int, int, int, int) v) {
+    (int iv, int jv, _, _) = v;
+    if (iv == i) {
+        if (jv == j) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+;; i_move, j_move, i_end, j_end
+(int, int, int, int) get_dirrection(tuple cur, tuple end) {
+    int attempt = cur.at(2);
+
+    (int i_move, int i_end?) = get_move(cur.at(0), end.at(0));
+    (int j_move, int j_end?) = get_move(cur.at(1), end.at(1));
+
+    var dir_1 = (-1, -1, 0, 0);
+    var dir_2 = ( 0, -1, 0, 0);
+    var dir_3 = ( 1, -1, 0, 0);
+    var dir_4 = ( 1,  0, 0, 0);
+    var dir_5 = ( 1,  1, 0, 0);
+    var dir_6 = ( 0,  1, 0, 0);
+    var dir_7 = (-1,  1, 0, 0);
+    var dir_8 = (-1,  0, 0, 0);
+
+    if (attempt == 0) {
+        return (i_move, j_move, i_end?, j_end?);
+    }
+
+    if (attempt == 1) {
+        if (is_var(i_move, j_move, dir_1)) {
+            return dir_2;
+        }
+        if (is_var(i_move, j_move, dir_2)) {
+            return dir_3;
+        }
+        if (is_var(i_move, j_move, dir_3)) {
+            return dir_4;
+        }
+        if (is_var(i_move, j_move, dir_4)) {
+            return dir_5;
+        }
+        if (is_var(i_move, j_move, dir_5)) {
+            return dir_6;
+        }
+        if (is_var(i_move, j_move, dir_6)) {
+            return dir_7;
+        }
+        if (is_var(i_move, j_move, dir_7)) {
+            return dir_8;
+        }
+        if (is_var(i_move, j_move, dir_8)) {
+            return dir_1;
+        }
+    }
+
+    if (attempt == 2) {
+        if (is_var(i_move, j_move, dir_1)) {
+            return dir_8;
+        }
+        if (is_var(i_move, j_move, dir_2)) {
+            return dir_1;
+        }
+        if (is_var(i_move, j_move, dir_3)) {
+            return dir_2;
+        }
+        if (is_var(i_move, j_move, dir_4)) {
+            return dir_3;
+        }
+        if (is_var(i_move, j_move, dir_5)) {
+            return dir_4;
+        }
+        if (is_var(i_move, j_move, dir_6)) {
+            return dir_5;
+        }
+        if (is_var(i_move, j_move, dir_7)) {
+            return dir_6;
+        }
+        if (is_var(i_move, j_move, dir_8)) {
+            return dir_7;
+        }
+    }
+
+    if (attempt == 3) {
+        if (is_var(i_move, j_move, dir_1)) {
+            return dir_3;
+        }
+        if (is_var(i_move, j_move, dir_2)) {
+            return dir_4;
+        }
+        if (is_var(i_move, j_move, dir_3)) {
+            return dir_5;
+        }
+        if (is_var(i_move, j_move, dir_4)) {
+            return dir_6;
+        }
+        if (is_var(i_move, j_move, dir_5)) {
+            return dir_7;
+        }
+        if (is_var(i_move, j_move, dir_6)) {
+            return dir_8;
+        }
+        if (is_var(i_move, j_move, dir_7)) {
+            return dir_1;
+        }
+        if (is_var(i_move, j_move, dir_8)) {
+            return dir_2;
+        }
+    }
+
+    if (attempt == 4) {
+        if (is_var(i_move, j_move, dir_1)) {
+            return dir_7;
+        }
+        if (is_var(i_move, j_move, dir_2)) {
+            return dir_8;
+        }
+        if (is_var(i_move, j_move, dir_3)) {
+            return dir_1;
+        }
+        if (is_var(i_move, j_move, dir_4)) {
+            return dir_2;
+        }
+        if (is_var(i_move, j_move, dir_5)) {
+            return dir_3;
+        }
+        if (is_var(i_move, j_move, dir_6)) {
+            return dir_4;
+        }
+        if (is_var(i_move, j_move, dir_7)) {
+            return dir_5;
+        }
+        if (is_var(i_move, j_move, dir_8)) {
+            return dir_6;
+        }
+    }
+
+    if (attempt == 5) {
+        if (is_var(i_move, j_move, dir_1)) {
+            return dir_4;
+        }
+        if (is_var(i_move, j_move, dir_2)) {
+            return dir_5;
+        }
+        if (is_var(i_move, j_move, dir_3)) {
+            return dir_6;
+        }
+        if (is_var(i_move, j_move, dir_4)) {
+            return dir_7;
+        }
+        if (is_var(i_move, j_move, dir_5)) {
+            return dir_8;
+        }
+        if (is_var(i_move, j_move, dir_6)) {
+            return dir_1;
+        }
+        if (is_var(i_move, j_move, dir_7)) {
+            return dir_2;
+        }
+        if (is_var(i_move, j_move, dir_8)) {
+            return dir_3;
+        }
+    }
+
+    if (attempt == 6) {
+        if (is_var(i_move, j_move, dir_1)) {
+            return dir_6;
+        }
+        if (is_var(i_move, j_move, dir_2)) {
+            return dir_7;
+        }
+        if (is_var(i_move, j_move, dir_3)) {
+            return dir_8;
+        }
+        if (is_var(i_move, j_move, dir_4)) {
+            return dir_1;
+        }
+        if (is_var(i_move, j_move, dir_5)) {
+            return dir_2;
+        }
+        if (is_var(i_move, j_move, dir_6)) {
+            return dir_3;
+        }
+        if (is_var(i_move, j_move, dir_7)) {
+            return dir_4;
+        }
+        if (is_var(i_move, j_move, dir_8)) {
+            return dir_5;
+        }
+    }
+
+    if (attempt == 7) {
+        if (is_var(i_move, j_move, dir_1)) {
+            return dir_5;
+        }
+        if (is_var(i_move, j_move, dir_2)) {
+            return dir_6;
+        }
+        if (is_var(i_move, j_move, dir_3)) {
+            return dir_7;
+        }
+        if (is_var(i_move, j_move, dir_4)) {
+            return dir_8;
+        }
+        if (is_var(i_move, j_move, dir_5)) {
+            return dir_1;
+        }
+        if (is_var(i_move, j_move, dir_6)) {
+            return dir_2;
+        }
+        if (is_var(i_move, j_move, dir_7)) {
+            return dir_3;
+        }
+        if (is_var(i_move, j_move, dir_8)) {
+            return dir_4;
+        }
+    }
+
+    return (i_move, j_move, i_end?, j_end?);
+}
+
+(int, int, int, tuple) solve(int n, int m, tuple maze) impure method_id {
+    `go_.` = 46;
+    `go_X` = 88;
+    `go_?` = 63;
+    `go_S` = 83;
+    `go_E` = 69;
+    `go_!` = 33;
+
+    tuple start = find_point(maze, `go_S`, m);
+    tuple end   = find_point(maze, `go_E`, m);
+
+    tuple cur = start;
+    cur~tpush(0);
+
+    tuple path = empty_tuple();
+    path~tpush(cur);
+
+    do {
+        (int i_move, int j_move, int i_end?, int j_end?) = get_dirrection(cur, end);
+
+        if (i_end? & j_end?) {
+            (cur, path) = add_tuple_node_to_path(path, end);
+        } else {
+            int i_next = cur.at(0) + i_move;
+            int j_next = cur.at(1) + j_move;
+
+            int allowed? = is_path_allowed(path, maze, i_next, j_next, n, m);
+
+            if (allowed?) {
+                (cur, path) = add_int_node_to_path(path, i_next, j_next, 0);
+                ~dump(path);
+            } else {
+                int attemp_prev = cur~tpop();
+                if (attemp_prev < 7) {
+                    cur~tpush(attemp_prev + 1);
+                } else {
+                    if (path.tlen() > 1) {
+                        path~tpop();
+                        cur = path~tpop();
+                        int prev_attemp = cur~tpop();
+                        cur~tpush(prev_attemp + 1);
+                        path~tpush(cur);
+                    } else {
+                        ;; нет пути
+                        path = empty_tuple();
+                        cur = end;
+                    }
+                }
+            }
+        }
+
+    } until (equal_dots?(end, cur));
+
+    return (-1, 100, path.tlen(), prepare_result(maze, path, n, m));
 }
 
