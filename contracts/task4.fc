@@ -133,7 +133,7 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
 
                 fp_idx += 1;
             }
-            if (((maze.at(i).at(j) == `go_.`) | (maze.at(i).at(j) == `go_?`)) & must_be_changed?) {
+            if (must_be_changed? & ((maze.at(i).at(j) == `go_.`) | (maze.at(i).at(j) == `go_?`) | (maze.at(i).at(j) == `go_X`))) {
                 row~tpush(`go_!`);
             } else {
                 row~tpush(maze.at(i).at(j));
@@ -472,7 +472,7 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
             int i_next = cur.at(0) + i_move;
             int j_next = cur.at(1) + j_move;
 
-            (int allowed?, int new_q_mark_cur, int x_cur_am__) = is_path_allowed(path, maze, i_next, j_next, n, m, q_mark_cur);
+            (int allowed?, int new_q_mark_cur, int x_cur_am__) = is_path_allowed(path, maze, i_next, j_next, n, m, q_mark_cur, x_cur);
             q_mark_cur = new_q_mark_cur;
             x_cur = x_cur_am__;
 
@@ -510,6 +510,9 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
                                 x_amount += 1;
                                 x_cur = x_amount;
 
+                                q_mark_amount = 0;
+                                q_mark_cur = q_mark_amount;
+
                                 cur = path~tpop();
                                 cur~tpop();
                                 cur~tpush(0);
@@ -533,7 +536,7 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
     } until (equal_dots?(end, cur));
 
     if (path.tlen()) {
-        return (0, q_mark_amount, path.tlen() - 1, prepare_result(maze, path, n, m));
+        return (x_amount, q_mark_amount, path.tlen() - 1, prepare_result(maze, path, n, m));
     }
 
     return (0, 0, 0, null());
