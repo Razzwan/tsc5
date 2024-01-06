@@ -5,9 +5,5 @@
 }
 
 (int, int, int, tuple) solve(int n, int m, tuple maze) impure method_id {
-    return (1, 2, 3, [
-        ["S", ".", "."],
-        [".", ".", "."],
-        [".", ".", "E"]
-    ]);
+    return (-1, 0, 0, empty_tuple());
 }

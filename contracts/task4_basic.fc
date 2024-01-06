@@ -36,7 +36,8 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
 }
 
 
-(int) is_path_allowed(tuple path, tuple maze, int i, int j, int n, int m) impure method_id {
+;; allowed? new_q_mark_count
+(int, int) is_path_allowed(tuple path, tuple maze, int i, int j, int n, int m, int q_mark_count) impure method_id {
     int idx = 0;
     int is_blocked? = 0;
 
@@ -60,23 +61,23 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
     }
 
     if (is_blocked?) {
-        return (0);
+        return (0, q_mark_count);
     }
 
     if (i >= n) {
-        return (0);
+        return (0, q_mark_count);
     }
 
     if (i < 0) {
-        return (0);
+        return (0, q_mark_count);
     }
 
     if (j >= m) {
-        return (0);
+        return (0, q_mark_count);
     }
 
     if (j < 0) {
-        return (0);
+        return (0, q_mark_count);
     }
 
     int allowed? = 0;
@@ -89,11 +90,18 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
         allowed? = -1;
     }
 
-    return (allowed?);
+    if (maze.at(i).at(j) == `go_?`) {
+        if (q_mark_count > 0) {
+            allowed? = -1;
+            q_mark_count = q_mark_count - 1;
+        }
+    }
+
+    return (allowed?, q_mark_count);
 }
 
 (tuple) prepare_result(tuple maze, tuple path, int n, int m) {
-    if (~ path.tlen()) {
+    if (path.tlen() == 0) {
         return empty_tuple();
     }
     tuple res = empty_tuple();
@@ -113,7 +121,7 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
 
                 fp_idx += 1;
             }
-            if ((maze.at(i).at(j) == `go_.`) & must_be_changed?) {
+            if (((maze.at(i).at(j) == `go_.`) | (maze.at(i).at(j) == `go_?`)) & must_be_changed?) {
                 row~tpush(`go_!`);
             } else {
                 row~tpush(maze.at(i).at(j));
@@ -144,6 +152,24 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
     } until (res.tlen());
 
     return res;
+}
+
+(int) find_point_amount(tuple maze, int point, int n, int m) {
+    int counter = 0;
+
+    int i = 0;
+    repeat (n) {
+        int j = 0;
+        repeat (m) {
+            if (maze.at(i).at(j) == point) {
+                counter += 1;
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+
+    return counter;
 }
 
 (int) equal_dots?(tuple a, tuple b) {
@@ -409,6 +435,9 @@ forall X -> (X) get_last(tuple path) {
     `go_E` = 69;
     `go_!` = 33;
 
+    n = maze.tlen();
+    m = maze.at(0).tlen();
+
     tuple start = find_point(maze, `go_S`, m);
     tuple end   = find_point(maze, `go_E`, m);
 
@@ -417,6 +446,10 @@ forall X -> (X) get_last(tuple path) {
 
     tuple path = empty_tuple();
     path~tpush(cur);
+
+    int q_mark_amount = 0;
+    int q_mark_cur = 0;
+    int max_q_mark = find_point_amount(maze, `go_?`, n, m);
 
     do {
         (int i_move, int j_move, int i_end?, int j_end?) = get_dirrection(cur, end);
@@ -427,9 +460,9 @@ forall X -> (X) get_last(tuple path) {
             int i_next = cur.at(0) + i_move;
             int j_next = cur.at(1) + j_move;
 
-;;            ~dump(i_next);
-;;            ~dump(j_next);
-            int allowed? = is_path_allowed(path, maze, i_next, j_next, n, m);
+;;            ~dump(q_mark_cur);
+            (int allowed?, int new_q_mark_cur) = is_path_allowed(path, maze, i_next, j_next, n, m, q_mark_cur);
+            q_mark_cur = new_q_mark_cur;
 
             if (allowed?) {
                 (cur, path) = add_int_node_to_path(path, i_next, j_next, 0);
@@ -442,15 +475,32 @@ forall X -> (X) get_last(tuple path) {
                     path~tpush(cur);
                 } else {
                     if (path.tlen() > 1) {
-                        path~tpop();
+                        tuple removed_item = path~tpop();
+                        if (maze.at(removed_item.at(0)).at(removed_item.at(1)) == `go_?`) {
+                            q_mark_cur += 1;
+                        }
+
                         cur = path~tpop();
                         int prev_attemp = cur~tpop();
                         cur~tpush(prev_attemp + 1);
                         path~tpush(cur);
                     } else {
-                        ;; нет пути
-                        path = empty_tuple();
-                        cur = end;
+                        if (q_mark_amount > max_q_mark) {
+                            ;; нет пути
+                            path = empty_tuple();
+                            cur = end;
+                        } else {
+                            q_mark_amount += 1;
+                            q_mark_cur = q_mark_amount;
+
+                            cur = path~tpop();
+                            cur~tpop();
+                            cur~tpush(0);
+                            path~tpush(cur);
+
+;;                            ~dump("000000000000000"s);
+;;                            ~dump(q_mark_cur);
+                        }
                     }
                 }
             }
@@ -458,6 +508,6 @@ forall X -> (X) get_last(tuple path) {
 
     } until (equal_dots?(end, cur));
 
-    return (-1, path.tlen() ? 100 : 0, path.tlen() - 1, prepare_result(maze, path, n, m));
+    return (-1, path.tlen() ? (100 / (1 << q_mark_amount)) : 0, path.tlen() - 1, prepare_result(maze, path, n, m));
 }
 
