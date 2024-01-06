@@ -5,10 +5,6 @@ global int `go_.`, int `go_X`, int `go_!`, int `go_?`, int `go_S`, int `go_E`;
 (int) tlen (tuple t) asm "TLEN";
 forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
 
-;;(tuple, tuple) duplicate(tuple t) {
-;;    return (t, t);
-;;}
-
 () recv_internal(slice in_msg) impure {
 
 }
@@ -180,10 +176,6 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
     }
 
     return 0;
-}
-
-forall X -> (X) get_last(tuple path) {
-    return path.at(path.tlen() - 1);
 }
 
 ;; move end?
@@ -460,13 +452,12 @@ forall X -> (X) get_last(tuple path) {
             int i_next = cur.at(0) + i_move;
             int j_next = cur.at(1) + j_move;
 
-;;            ~dump(q_mark_cur);
             (int allowed?, int new_q_mark_cur) = is_path_allowed(path, maze, i_next, j_next, n, m, q_mark_cur);
             q_mark_cur = new_q_mark_cur;
 
             if (allowed?) {
                 (cur, path) = add_int_node_to_path(path, i_next, j_next, 0);
-                ~dump(path);
+;;                ~dump(path);
             } else {
                 int attemp_prev = cur~tpop();
                 if (attemp_prev < 7) {
@@ -497,9 +488,6 @@ forall X -> (X) get_last(tuple path) {
                             cur~tpop();
                             cur~tpush(0);
                             path~tpush(cur);
-
-;;                            ~dump("000000000000000"s);
-                            ~dump(q_mark_cur);
                         }
                     }
                 }
@@ -510,4 +498,3 @@ forall X -> (X) get_last(tuple path) {
 
     return (-1, q_mark_amount, path.tlen() - 1, prepare_result(maze, path, n, m));
 }
-
