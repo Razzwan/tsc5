@@ -107,7 +107,7 @@ forall X -> (tuple, X) tpop (tuple t) asm "TPOP";
 
 (tuple) prepare_result(tuple maze, tuple path, int n, int m) {
     if (path.tlen() == 0) {
-        return empty_tuple();
+        return null();
     }
     tuple res = empty_tuple();
     int i = 0;
